@@ -1,5 +1,8 @@
-body {
+html {
     font-size: 16px;
+}
+
+body {
     font-family: 'Nunito Sans', sans-serif;
     padding: 0; margin: 0;
     position: absolute;
@@ -30,26 +33,29 @@ ul.roll-buttons:after {
     clear: both;
 }
 
-ul.roll-buttons li {
+ul.roll-buttons input[type=submit] {
     display: block;
     float: left;
     text-align: center;
     width: 10em;
     padding: 2em 0;
     margin: 0;
+    border: none;
     background: #66aacc;
-}
-
-a {
     color: #fff;
 }
 
-ul.roll-buttons li:hover {
+ul.roll-buttons input[type=submit]:hover {
     background: #77bbdd;
+    cursor: pointer;
+}
+
+h1, h2, h3, h4 {
+    font-weight: bold;
 }
 
 h2, h3 {
-    letter-spacing: 0.2rem;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     margin: 0;
     width: 100%;
@@ -57,24 +63,26 @@ h2, h3 {
 }
 
 h1 {
+    font-size: 2rem;
     margin: 0;
-    padding: 0 0 16px 0;
+    padding: 0 0 1rem 0;
     text-align: center;
 }
 
 h2 {
-    padding: 16px 0 0 0;
+    font-size: 1.5rem;
+    padding: 1rem 0 0 0;
 }
 
 h3 {
     clear: both;
-    padding: 16px 0;
+    padding: 1rem 0;
 }
 
 h4 {
     text-align: center;
     padding: 0;
-    margin: 4px 0;
+    margin: 0.2rem 0;
 }
 
 ul.previous-rolls {

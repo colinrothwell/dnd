@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dice Roll!</title>
+    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+<div class="content">
+{{if .HasResult}}
+    <h2>Result</h2>
+    <h4>{{.DiceRolled}} =</h4>
+    <h1>{{.Result}}</h1>
+{{end}}
+    <ul class="roll-buttons">
+        <a href="/d4"><li>d4</li></a>
+        <a href="/d6"><li>d6</li></a>
+        <a href="/d8"><li>d8</li></a>
+        <a href="/d10"><li>d10</li></a>
+        <a href="/d12"><li>d12</li></a>
+        <a href="/d20"><li>d20</li></a>
+    </ul>
+    <h3>Previous Rolls</h3>
+    <ul class="previous-rolls">
+    {{range $index := .PreviousRolls}}
+        <li>{{ . }}</li>
+    {{end}}
+    </ul>
+</div>
+</body>
+</html>

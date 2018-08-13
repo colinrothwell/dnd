@@ -1,0 +1,85 @@
+body {
+    font-size: 16px;
+    font-family: 'Nunito Sans', sans-serif;
+    padding: 0; margin: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #f2fbff;
+    color: #446575;
+}
+
+div.content {
+    position: relative;
+    padding: 0;
+    margin: 0 auto;
+    background: #d8ebf4;
+    width: 30em;
+    min-height: 100%;
+}
+
+ul.roll-buttons {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.roll-buttons:after {
+    clear: both;
+}
+
+ul.roll-buttons li {
+    display: block;
+    float: left;
+    text-align: center;
+    width: 10em;
+    padding: 2em 0;
+    margin: 0;
+    background: #66aacc;
+}
+
+a {
+    color: #fff;
+}
+
+ul.roll-buttons li:hover {
+    background: #77bbdd;
+}
+
+h2, h3 {
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    margin: 0;
+    width: 100%;
+    text-align: center;
+}
+
+h1 {
+    margin: 0;
+    padding: 0 0 16px 0;
+    text-align: center;
+}
+
+h2 {
+    padding: 16px 0 0 0;
+}
+
+h3 {
+    clear: both;
+    padding: 16px 0;
+}
+
+h4 {
+    text-align: center;
+    padding: 0;
+    margin: 4px 0;
+}
+
+ul.previous-rolls {
+    text-align: center;
+    margin: 0 auto;
+    padding: 0;
+    list-style-type: none;
+}

@@ -69,7 +69,7 @@ func TokeniseDiceRollString(diceRollString string) ([]DiceRollToken, error) {
 }
 
 type DiceRoll interface {
-	SimulateValue() int
+	SimulateValue() []int
 }
 
 type ActualDiceRoll struct {
@@ -85,15 +85,17 @@ func (dice ActualDiceRoll) String() string {
 	}
 }
 
-func (dice ActualDiceRoll) SimulateValue() int {
-	roll := 0
+func (dice ActualDiceRoll) SimulateValue() []int {
+	rolls := make([]int, 0)
 	for i := 0; i < dice.count; i++ {
-		roll += 1 + rand.Intn(dice.faces)
+		rolls = append(rolls, 1 + rand.Intn(dice.faces))
 	}
 	if dice.negative {
-		roll = -roll
+		for i, roll := range rolls {
+			rolls[i] = -roll
+		}
 	}
-	return roll
+	return rolls
 }
 
 type NumberDiceRoll struct {
@@ -108,8 +110,8 @@ func (roll NumberDiceRoll) String() string {
 	}
 }
 
-func (dice NumberDiceRoll) SimulateValue() int {
-	return dice.value
+func (dice NumberDiceRoll) SimulateValue() []int {
+	return []int{dice.value}
 }
 
 type DiceRolls []DiceRoll
@@ -199,10 +201,10 @@ func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
 }
 
 
-func (dice DiceRolls) SimulateValue() int {
-	value := 0
+func (dice DiceRolls) SimulateValue() []int {
+	result := make([]int, 0)
 	for _, d := range(dice) {
-		value += d.SimulateValue()
+		result = append(result,  d.SimulateValue()...)
 	}
-	return value
+	return result
 }

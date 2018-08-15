@@ -10,21 +10,34 @@ import (
 	"strings"
 )
 
+type DiceRollResult struct {
+	DiceRolled dice.DiceRoll
+	Results []int
+	Sum int
+}
+
 type DiceServer struct {
 	Template *template.Template
 	StaticServer http.Handler
-	PreviousRolls []dice.DiceRolls
+	PreviousRolls []DiceRollResult
 }
 
 type RollTemplateValues struct {
 	HasResult bool
-	DiceRolled dice.DiceRoll
-	Result int
-	PreviousRolls chan dice.DiceRolls
+	LastRoll DiceRollResult
+	OlderRolls chan DiceRollResult
 }
 
-func reverse(lst []dice.DiceRolls) chan dice.DiceRolls {
-	ret := make(chan dice.DiceRolls)
+func sumIntSlice(slice []int) int {
+	result := 0
+	for _, n := range slice {
+		result += n
+	}
+	return result
+}
+
+func reverse(lst []DiceRollResult) chan DiceRollResult {
+	ret := make(chan DiceRollResult)
 	go func() {
 		for i, _ := range lst {
 			ret <- lst[len(lst)-1-i]
@@ -33,7 +46,6 @@ func reverse(lst []dice.DiceRolls) chan dice.DiceRolls {
 	}()
 	return ret
 }
-
 
 func (diceServer *DiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.RequestURI == "/favicon.ico" {
@@ -57,7 +69,10 @@ func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request)
 	r.ParseForm()
 	roll, err := dice.ParseDiceRollString(r.Form["roll"][0])
 	if err == nil {
-		diceServer.PreviousRolls = append(diceServer.PreviousRolls, roll)
+		results := roll.SimulateValue();
+		sum := sumIntSlice(results);
+		diceServer.PreviousRolls = append(diceServer.PreviousRolls,
+			DiceRollResult{roll, results, sum})
 	} else {
 		log.Println(err)
 	}
@@ -68,10 +83,14 @@ func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) 
 	var templateValues RollTemplateValues
 	if len(diceServer.PreviousRolls) > 0 {
 		templateValues.HasResult = true
-		templateValues.DiceRolled = diceServer.PreviousRolls[0]
-		templateValues.PreviousRolls = reverse(diceServer.PreviousRolls[1:])
+		penultimateIndex := len(diceServer.PreviousRolls)-1
+		templateValues.LastRoll = diceServer.PreviousRolls[penultimateIndex]
+		templateValues.OlderRolls = reverse(diceServer.PreviousRolls[:penultimateIndex])
 	}
-	diceServer.Template.Execute(w, templateValues)
+	err := diceServer.Template.Execute(w, templateValues)
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 func main() {
@@ -84,7 +103,7 @@ func main() {
 	server := DiceServer{
 		theTemplate,
 		http.StripPrefix("/static", http.FileServer(http.Dir("static"))),
-		make([]dice.DiceRolls, 0),
+		make([]DiceRollResult, 0),
 	}
 	err = http.ListenAndServe("localhost:1212", &server)
 	if err != nil {

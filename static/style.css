@@ -1,6 +1,7 @@
 html {
     font-size: 12pt;
     line-height: 1.5;
+    text-align: center;
 }
 
 body {
@@ -34,6 +35,16 @@ ul.roll-buttons:after {
     clear: both;
 }
 
+input {
+    text-align: center;
+    padding: 0.5em 0;
+    margin: 0;
+    border: none;
+    background: #66aacc;
+    color: #fff;
+    width: 100%
+}
+
 ul.roll-buttons input[type=submit] {
     display: block;
     float: left;
@@ -46,12 +57,26 @@ ul.roll-buttons input[type=submit] {
     color: #fff;
 }
 
-ul.roll-buttons input[type=submit]:hover {
+input[type=submit]:hover {
     background: #77bbdd;
     cursor: pointer;
 }
 
+input[type=text] {
+    background: #f2fbff;
+    color: #66aacc;
+    padding: 0.5em 0;
+    margin: 1em auto;
+    width: 28em;
+}
+
+input[type=submit] {
+    margin: 0 auto;
+    width: 28em;
+}
+
 h1, h2, h3, h4 {
+    clear: both;
     font-weight: bold;
 }
 
@@ -83,7 +108,7 @@ h3 {
 
 h4 {
     text-align: center;
-    padding: 0;
+    padding: 1rem 0 0 0;
 }
 
 ul.previous-rolls {

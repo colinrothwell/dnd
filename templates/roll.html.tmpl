@@ -24,6 +24,11 @@
         <li><input id="submit-d20" type="submit" name="roll" value="d20"></li>
         </form>
     </ul>
+    <h4>Or a custom roll</h4>
+    <form action="/roll" method="post">
+        <input id="custom-roll" type="text" name="custom-roll-string" value="hello">
+        <input id="submit-custom" type="submit" name="roll-custom" value="Roll!">
+    </form>
     <h3>Previous Rolls</h3>
     <ul class="previous-rolls">
     {{range $index := .OlderRolls}}

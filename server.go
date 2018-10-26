@@ -1,31 +1,27 @@
 package main
 
 import (
-	"net/http"
-	"log"
-	"math/rand"
-	"time"
 	"dnd/dice"
 	"html/template"
+	"log"
+	"math/rand"
+	"net/http"
 	"strings"
+	"time"
 )
 
-type DiceRollResult struct {
-	DiceRolled dice.DiceRoll
-	Results []int
-	Sum int
-}
-
 type DiceServer struct {
-	Template *template.Template
-	StaticServer http.Handler
-	PreviousRolls []DiceRollResult
+	Template       *template.Template
+	StaticServer   http.Handler
+	PreviousRolls  []dice.DiceRollResult
+	LastCustomRoll string
 }
 
 type RollTemplateValues struct {
-	HasResult bool
-	LastRoll DiceRollResult
-	OlderRolls chan DiceRollResult
+	HasResult      bool
+	LastRoll       dice.DiceRollResult
+	OlderRolls     chan dice.DiceRollResult
+	LastCustomRoll string
 }
 
 func sumIntSlice(slice []int) int {
@@ -34,17 +30,6 @@ func sumIntSlice(slice []int) int {
 		result += n
 	}
 	return result
-}
-
-func reverse(lst []DiceRollResult) chan DiceRollResult {
-	ret := make(chan DiceRollResult)
-	go func() {
-		for i, _ := range lst {
-			ret <- lst[len(lst)-1-i]
-		}
-		close(ret)
-	}()
-	return ret
 }
 
 func (diceServer *DiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -58,21 +43,24 @@ func (diceServer *DiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if r.Method == "POST" {
-		diceServer.handlePost(w, r);
+		diceServer.handlePost(w, r)
 		return
 	} else {
-		diceServer.handleGet(w, r);
+		diceServer.handleGet(w, r)
 	}
 }
 
 func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	roll, err := dice.ParseDiceRollString(r.Form["roll"][0])
+	if len(r.Form["roll-custom"]) > 0 {
+		diceServer.LastCustomRoll = r.Form["roll"][0]
+	}
 	if err == nil {
-		results := roll.SimulateValue();
-		sum := sumIntSlice(results);
+		results := roll.SimulateValue()
+		sum := sumIntSlice(results)
 		diceServer.PreviousRolls = append(diceServer.PreviousRolls,
-			DiceRollResult{roll, results, sum})
+			dice.DiceRollResult{roll, results, sum})
 	} else {
 		log.Println(err)
 	}
@@ -81,11 +69,12 @@ func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request)
 
 func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) {
 	var templateValues RollTemplateValues
+	templateValues.LastCustomRoll = diceServer.LastCustomRoll
 	if len(diceServer.PreviousRolls) > 0 {
 		templateValues.HasResult = true
-		penultimateIndex := len(diceServer.PreviousRolls)-1
+		penultimateIndex := len(diceServer.PreviousRolls) - 1
 		templateValues.LastRoll = diceServer.PreviousRolls[penultimateIndex]
-		templateValues.OlderRolls = reverse(diceServer.PreviousRolls[:penultimateIndex])
+		templateValues.OlderRolls = dice.ReverseDiceRollResult(diceServer.PreviousRolls[:penultimateIndex])
 	}
 	err := diceServer.Template.Execute(w, templateValues)
 	if err != nil {
@@ -103,7 +92,8 @@ func main() {
 	server := DiceServer{
 		theTemplate,
 		http.StripPrefix("/static", http.FileServer(http.Dir("static"))),
-		make([]DiceRollResult, 0),
+		make([]dice.DiceRollResult, 0),
+		"",
 	}
 	err = http.ListenAndServe("localhost:1212", &server)
 	if err != nil {

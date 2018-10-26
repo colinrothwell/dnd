@@ -3,10 +3,10 @@ package dice
 import (
 	"errors"
 	"fmt"
-	"strings"
-	"strconv"
-	"unicode"
 	"math/rand"
+	"strconv"
+	"strings"
+	"unicode"
 )
 
 type DiceRollToken interface{}
@@ -34,7 +34,7 @@ func TokeniseDiceRollString(diceRollString string) ([]DiceRollToken, error) {
 	state := NotReadingAnything
 	var builder strings.Builder
 
-	tokeniseNumberIfNecessary := func () {
+	tokeniseNumberIfNecessary := func() {
 		if state == ReadingNumber {
 			state = NotReadingAnything
 			number, error := strconv.Atoi(builder.String())
@@ -46,11 +46,11 @@ func TokeniseDiceRollString(diceRollString string) ([]DiceRollToken, error) {
 		}
 	}
 
-	for _, r := range(diceRollString) {
+	for _, r := range diceRollString {
 		if !unicode.IsNumber(r) {
 			tokeniseNumberIfNecessary()
 		}
-		switch (r) {
+		switch r {
 		case 'd', 'D':
 			tokenised = append(tokenised, DDiceRollToken{})
 		case '+', '-':
@@ -73,7 +73,7 @@ type DiceRoll interface {
 }
 
 type ActualDiceRoll struct {
-	negative bool
+	negative     bool
 	count, faces int
 }
 
@@ -88,7 +88,7 @@ func (dice ActualDiceRoll) String() string {
 func (dice ActualDiceRoll) SimulateValue() []int {
 	rolls := make([]int, 0)
 	for i := 0; i < dice.count; i++ {
-		rolls = append(rolls, 1 + rand.Intn(dice.faces))
+		rolls = append(rolls, 1+rand.Intn(dice.faces))
 	}
 	if dice.negative {
 		for i, roll := range rolls {
@@ -143,7 +143,7 @@ func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
 		}
 		if nextElementIsAddendSpecifier || endIndex == len(tokenisedString) {
 			die = tokenisedString[startIndex:endIndex]
-			switch (len(die)) {
+			switch len(die) {
 			case 1:
 				value, ok := die[0].(NumberDiceRollToken)
 				if !ok {
@@ -200,11 +200,27 @@ func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
 	return wholeRoll, nil
 }
 
-
 func (dice DiceRolls) SimulateValue() []int {
 	result := make([]int, 0)
-	for _, d := range(dice) {
-		result = append(result,  d.SimulateValue()...)
+	for _, d := range dice {
+		result = append(result, d.SimulateValue()...)
 	}
 	return result
+}
+
+type DiceRollResult struct {
+	DiceRolled DiceRoll
+	Results    []int
+	Sum        int
+}
+
+func ReverseDiceRollResult(lst []DiceRollResult) chan DiceRollResult {
+	ret := make(chan DiceRollResult)
+	go func() {
+		for i, _ := range lst {
+			ret <- lst[len(lst)-1-i]
+		}
+		close(ret)
+	}()
+	return ret
 }

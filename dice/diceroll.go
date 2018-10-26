@@ -12,7 +12,7 @@ import (
 type DiceRollToken interface{}
 type DDiceRollToken struct{}
 type SignDiceRollToken rune
-type NumberDiceRollToken int
+type NumberDiceRollToken uint
 
 func (_ DDiceRollToken) String() string {
 	return "<DRT: d>"
@@ -69,52 +69,69 @@ func TokeniseDiceRollString(diceRollString string) ([]DiceRollToken, error) {
 }
 
 type DiceRoll interface {
-	SimulateValue() []int
+	SimulateValue() []uint
+	String() string
+	NeedsBrackets() bool
 }
 
 type ActualDiceRoll struct {
-	negative     bool
-	count, faces int
+	count, faces uint
+}
+
+func (dice ActualDiceRoll) NeedsBrackets() bool {
+	return dice.count != 1
 }
 
 func (dice ActualDiceRoll) String() string {
-	if dice.negative {
-		return fmt.Sprintf("- %dd%d", dice.count, dice.faces)
-	} else {
-		return fmt.Sprintf("%dd%d", dice.count, dice.faces)
-	}
+	return fmt.Sprintf("%dd%d", dice.count, dice.faces)
 }
 
-func (dice ActualDiceRoll) SimulateValue() []int {
-	rolls := make([]int, 0)
-	for i := 0; i < dice.count; i++ {
-		rolls = append(rolls, 1+rand.Intn(dice.faces))
-	}
-	if dice.negative {
-		for i, roll := range rolls {
-			rolls[i] = -roll
-		}
+func (dice ActualDiceRoll) SimulateValue() []uint {
+	rolls := make([]uint, 0)
+	for i := uint(0); i < dice.count; i++ {
+		rolls = append(rolls, 1+uint(rand.Intn(int(dice.faces))))
 	}
 	return rolls
 }
 
-type NumberDiceRoll struct {
-	value int
+type NumberDiceRoll uint
+
+func (number NumberDiceRoll) NeedsBrackets() bool {
+	return false
 }
 
-func (roll NumberDiceRoll) String() string {
-	if roll.value > 0 {
-		return fmt.Sprintf("+ %d", roll.value)
-	} else {
-		return fmt.Sprintf("- %d", -roll.value)
+func (number NumberDiceRoll) String() string {
+	return fmt.Sprintf("%d", number)
+}
+
+func (number NumberDiceRoll) SimulateValue() []uint {
+	return []uint{uint(number)}
+}
+
+type DiceRolls struct {
+	subtracted []bool
+	rolls      []DiceRoll
+}
+
+func (diceRolls DiceRolls) String() string {
+	result := ""
+	for i, roll := range diceRolls.rolls {
+		if i == 0 {
+			if diceRolls.subtracted[i] {
+				result += "-"
+			}
+			result += roll.String()
+		} else {
+			if diceRolls.subtracted[i] {
+				result += " - "
+			} else {
+				result += " + "
+			}
+			result += roll.String()
+		}
 	}
+	return result
 }
-
-func (dice NumberDiceRoll) SimulateValue() []int {
-	return []int{dice.value}
-}
-
-type DiceRolls []DiceRoll
 
 // Need to be able to read
 // d6
@@ -124,12 +141,13 @@ type DiceRolls []DiceRoll
 // d6 + 1
 // 2d6 - 2
 // 3d8 + 2d6 + 2
-func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
+func ParseDiceRollString(diceRollString string) (*DiceRolls, error) {
 	tokenisedString, error := TokeniseDiceRollString(diceRollString)
 	if error != nil {
 		return nil, error
 	}
 	// Read up to the end of the string or the first add/sub token
+	wholeSubtracted := make([]bool, 0)
 	wholeRoll := make([]DiceRoll, 0)
 	var die []DiceRollToken
 	var nextElement SignDiceRollToken
@@ -143,16 +161,14 @@ func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
 		}
 		if nextElementIsAddendSpecifier || endIndex == len(tokenisedString) {
 			die = tokenisedString[startIndex:endIndex]
+			wholeSubtracted = append(wholeSubtracted, nextIsNegative)
 			switch len(die) {
 			case 1:
 				value, ok := die[0].(NumberDiceRollToken)
 				if !ok {
 					return nil, errors.New("invalid die format")
 				}
-				if nextIsNegative {
-					value = -value
-				}
-				wholeRoll = append(wholeRoll, NumberDiceRoll{int(value)})
+				wholeRoll = append(wholeRoll, NumberDiceRoll(value))
 			case 2:
 				_, ok := die[0].(DDiceRollToken)
 				if !ok {
@@ -162,11 +178,7 @@ func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
 				if !valueOk {
 					return nil, errors.New("invalid number of sides marker")
 				}
-				wholeRoll = append(wholeRoll, ActualDiceRoll{
-					nextIsNegative,
-					1,
-					int(value),
-				})
+				wholeRoll = append(wholeRoll, ActualDiceRoll{1, uint(value)})
 			case 3:
 				left, leftOk := die[0].(NumberDiceRollToken)
 				if !leftOk {
@@ -180,9 +192,7 @@ func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
 				if !rightOk {
 					return nil, errors.New("invalid number of sides")
 				}
-				wholeRoll = append(wholeRoll, ActualDiceRoll{
-					nextIsNegative, int(left), int(right),
-				})
+				wholeRoll = append(wholeRoll, ActualDiceRoll{uint(left), uint(right)})
 			default:
 				return nil, errors.New(fmt.Sprint("Invalid die ", die))
 			}
@@ -197,27 +207,71 @@ func ParseDiceRollString(diceRollString string) (DiceRolls, error) {
 			endIndex++
 		}
 	}
-	return wholeRoll, nil
+	return &DiceRolls{wholeSubtracted, wholeRoll}, nil
 }
 
-func (dice DiceRolls) SimulateValue() []int {
-	result := make([]int, 0)
-	for _, d := range dice {
-		result = append(result, d.SimulateValue()...)
+type DiceRollResult struct {
+	DiceRolled *DiceRolls
+	Results    [][]uint
+	Sum        int
+}
+
+func (diceRollResult DiceRollResult) StringSimulatedResults() string {
+	result := ""
+	for i, subRoll := range diceRollResult.Results {
+		subResult := ""
+		includeBrackets := len(diceRollResult.Results) != 1 && diceRollResult.DiceRolled.rolls[i].NeedsBrackets()
+		if includeBrackets {
+			subResult = "("
+		}
+		for j, roll := range subRoll {
+			if j == 0 {
+				subResult += fmt.Sprint(roll)
+			} else {
+				subResult += fmt.Sprintf(" + %d", roll)
+			}
+		}
+		if includeBrackets {
+			subResult += ")"
+		}
+		subtracted := diceRollResult.DiceRolled.subtracted
+		if i == 0 {
+			if subtracted[i] {
+				result += "-"
+			}
+		} else {
+			if subtracted[i] {
+				result += " - "
+			} else {
+				result += " + "
+			}
+		}
+		result += subResult
 	}
 	return result
 }
 
-type DiceRollResult struct {
-	DiceRolled DiceRoll
-	Results    []int
-	Sum        int
+func (diceRolls *DiceRolls) SimulateDiceRolls() DiceRollResult {
+	sum := 0
+	results := make([][]uint, len(diceRolls.rolls))
+	for i, roll := range diceRolls.rolls {
+		results[i] = roll.SimulateValue()
+		addend := 0
+		for _, individualRoll := range results[i] {
+			addend += int(individualRoll)
+		}
+		if diceRolls.subtracted[i] {
+			addend = -addend
+		}
+		sum += addend
+	}
+	return DiceRollResult{diceRolls, results, sum}
 }
 
-func ReverseDiceRollResult(lst []DiceRollResult) chan DiceRollResult {
+func ReverseDiceRollResultSlice(lst []DiceRollResult) chan DiceRollResult {
 	ret := make(chan DiceRollResult)
 	go func() {
-		for i, _ := range lst {
+		for i := range lst {
 			ret <- lst[len(lst)-1-i]
 		}
 		close(ret)

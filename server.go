@@ -57,10 +57,7 @@ func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request)
 		diceServer.LastCustomRoll = r.Form["roll"][0]
 	}
 	if err == nil {
-		results := roll.SimulateValue()
-		sum := sumIntSlice(results)
-		diceServer.PreviousRolls = append(diceServer.PreviousRolls,
-			dice.DiceRollResult{roll, results, sum})
+		diceServer.PreviousRolls = append(diceServer.PreviousRolls, roll.SimulateDiceRolls())
 	} else {
 		log.Println(err)
 	}
@@ -74,7 +71,7 @@ func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) 
 		templateValues.HasResult = true
 		penultimateIndex := len(diceServer.PreviousRolls) - 1
 		templateValues.LastRoll = diceServer.PreviousRolls[penultimateIndex]
-		templateValues.OlderRolls = dice.ReverseDiceRollResult(diceServer.PreviousRolls[:penultimateIndex])
+		templateValues.OlderRolls = dice.ReverseDiceRollResultSlice(diceServer.PreviousRolls[:penultimateIndex])
 	}
 	err := diceServer.Template.Execute(w, templateValues)
 	if err != nil {

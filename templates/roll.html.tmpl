@@ -11,7 +11,7 @@
 <div class="content">
 {{if .HasResult}}
     <h2>Result</h2>
-    <h4>{{.LastRoll.DiceRolled}} = {{.LastRoll.Results}} =</h4>
+    <h4>{{.LastRoll.DiceRolled}} = {{.LastRoll.StringSimulatedResults}} =</h4>
     <h1>{{.LastRoll.Sum}}</h1>
 {{end}}
     <ul class="roll-buttons">
@@ -32,7 +32,7 @@
     <h3>Previous Rolls</h3>
     <ul class="previous-rolls">
     {{range $index := .OlderRolls}}
-        <li>{{ .DiceRolled }} = {{ .Results }} = {{ .Sum }}</li>
+        <li>{{ .DiceRolled }} = {{ .StringSimulatedResults }} = {{ .Sum }}</li>
     {{end}}
     </ul>
 </div>

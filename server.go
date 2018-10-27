@@ -82,11 +82,15 @@ type EncounterServer struct {
 	Creatures []creature.Creature
 }
 
-func (encounterServer *EncounterServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (encounterServer *EncounterServer) handleGet(w http.ResponseWriter, r *http.Request) {
 	err := encounterServer.Template.Execute(w, struct{}{})
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func (encounterServer *EncounterServer) handlePost(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func main() {

@@ -50,14 +50,12 @@ ul.roll-buttons input[type=submit] {
     float: left;
     text-align: center;
     width: 10em;
-    padding: 2em 0;
+    padding: 1em 0;
     margin: 0;
     border: none;
-    background: #66aacc;
-    color: #fff;
 }
 
-input[type=submit]:hover {
+ul.roll-buttons input[type=submit]:hover, input[type=submit]:hover {
     background: #77bbdd;
     cursor: pointer;
 }
@@ -66,13 +64,22 @@ input[type=text] {
     background: #f2fbff;
     color: #66aacc;
     padding: 0.5em 0;
-    margin: 1em auto;
-    width: 28em;
+    margin: 1rem auto;
+    width: 18em;
+}
+
+input[type=text].default {
+    color: #77bbdd;
+    font-style: italic;
+}
+
+input#roll {
+    margin: 1rem 0.5rem;
 }
 
 input[type=submit] {
-    margin: 0 auto;
-    width: 28em;
+    margin: 1rem 0.5rem;
+    width: 8em;
 }
 
 h1, h2, h3, h4 {
@@ -91,7 +98,7 @@ h2, h3 {
 h1 {
     font-size: 2rem;
     margin: 0;
-    padding: 0 0 1rem 0;
+    padding: 0;
     text-align: center;
 }
 
@@ -108,7 +115,7 @@ h3 {
 
 h4 {
     text-align: center;
-    padding: 1rem 0 0 0;
+    padding: 0 0 0 0;
 }
 
 ul.previous-rolls {

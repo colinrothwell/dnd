@@ -90,7 +90,7 @@ func main() {
 		theTemplate,
 		http.StripPrefix("/static", http.FileServer(http.Dir("static"))),
 		make([]dice.DiceRollResult, 0),
-		"",
+		"Custom Roll",
 	}
 	err = http.ListenAndServe("localhost:1212", &server)
 	if err != nil {

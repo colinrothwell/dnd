@@ -72,6 +72,8 @@ type DiceRoll interface {
 	SimulateValue() []uint
 	String() string
 	NeedsBrackets() bool
+	Min() uint
+	Max() uint
 }
 
 type ActualDiceRoll struct {
@@ -94,6 +96,14 @@ func (dice ActualDiceRoll) SimulateValue() []uint {
 	return rolls
 }
 
+func (dice ActualDiceRoll) Min() uint {
+	return dice.count
+}
+
+func (dice ActualDiceRoll) Max() uint {
+	return dice.count * dice.faces
+}
+
 type NumberDiceRoll uint
 
 func (number NumberDiceRoll) NeedsBrackets() bool {
@@ -106,6 +116,14 @@ func (number NumberDiceRoll) String() string {
 
 func (number NumberDiceRoll) SimulateValue() []uint {
 	return []uint{uint(number)}
+}
+
+func (number NumberDiceRoll) Min() uint {
+	return uint(number)
+}
+
+func (number NumberDiceRoll) Max() uint {
+	return uint(number)
 }
 
 type DiceRolls struct {
@@ -131,6 +149,30 @@ func (diceRolls DiceRolls) String() string {
 		}
 	}
 	return result
+}
+
+func (diceRolls DiceRolls) Min() uint {
+	min := uint(0)
+	for i, roll := range diceRolls.rolls {
+		if diceRolls.subtracted[i] {
+			min -= roll.Max()
+		} else {
+			min += roll.Min()
+		}
+	}
+	return min
+}
+
+func (diceRolls DiceRolls) Max() uint {
+	max := uint(0)
+	for i, roll := range diceRolls.rolls {
+		if diceRolls.subtracted[i] {
+			max -= roll.Min()
+		} else {
+			max += roll.Max()
+		}
+	}
+	return max
 }
 
 // Need to be able to read

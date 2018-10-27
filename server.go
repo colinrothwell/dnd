@@ -1,18 +1,23 @@
 package main
 
 import (
+	"dnd/creature"
 	"dnd/dice"
 	"html/template"
 	"log"
 	"math/rand"
 	"net/http"
-	"strings"
 	"time"
 )
 
+type DndServer struct {
+	DiceServer      DiceServer
+	EncounterServer EncounterServer
+	StaticServer    http.Handler
+}
+
 type DiceServer struct {
 	Template       *template.Template
-	StaticServer   http.Handler
 	PreviousRolls  []dice.DiceRollResult
 	LastCustomRoll string
 }
@@ -32,22 +37,14 @@ func sumIntSlice(slice []int) int {
 	return result
 }
 
-func (diceServer *DiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.RequestURI == "/favicon.ico" {
-		log.Print(r.RequestURI, ": Ignoring favico")
-		return
-	}
-	if strings.HasPrefix(r.RequestURI, "/static") {
-		log.Print(r.RequestURI, ": Serving static")
-		diceServer.StaticServer.ServeHTTP(w, r)
-		return
-	}
-	if r.Method == "POST" {
-		diceServer.handlePost(w, r)
-		return
-	} else {
-		diceServer.handleGet(w, r)
-	}
+func GetPostHandler(handleGet http.HandlerFunc, handlePost http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			handlePost(w, r)
+		} else {
+			handleGet(w, r)
+		}
+	})
 }
 
 func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +68,8 @@ func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) 
 		templateValues.HasResult = true
 		penultimateIndex := len(diceServer.PreviousRolls) - 1
 		templateValues.LastRoll = diceServer.PreviousRolls[penultimateIndex]
-		templateValues.OlderRolls = dice.ReverseDiceRollResultSlice(diceServer.PreviousRolls[:penultimateIndex])
+		templateValues.OlderRolls = dice.ReverseDiceRollResultSlice(
+			diceServer.PreviousRolls[:penultimateIndex])
 	}
 	err := diceServer.Template.Execute(w, templateValues)
 	if err != nil {
@@ -79,20 +77,40 @@ func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+type EncounterServer struct {
+	Template  *template.Template
+	Creatures []creature.Creature
+}
+
+func (encounterServer *EncounterServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := encounterServer.Template.Execute(w, struct{}{})
+	if err != nil {
+		log.Print(err)
+	}
+}
+
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
-	theTemplate, err := template.ParseFiles("templates/roll.html.tmpl")
+	theTemplate, err := template.ParseGlob("templates/*")
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Print("Starting dice server on localhost:1212...")
-	server := DiceServer{
-		theTemplate,
-		http.StripPrefix("/static", http.FileServer(http.Dir("static"))),
+	diceServer := DiceServer{
+		theTemplate.Lookup("roll.html.tmpl"),
 		make([]dice.DiceRollResult, 0),
 		"Custom Roll",
 	}
-	err = http.ListenAndServe("localhost:1212", &server)
+	encounterServer := EncounterServer{
+		theTemplate.Lookup("encounter.html.tmpl"),
+		make([]creature.Creature, 0),
+	}
+	server := http.NewServeMux()
+	server.HandleFunc("/favicon.ico", http.NotFound)
+	server.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
+	server.HandleFunc("/encounter/", encounterServer.ServeHTTP)
+	server.Handle("/", GetPostHandler(diceServer.handleGet, diceServer.handlePost))
+	err = http.ListenAndServe("localhost:1212", server)
 	if err != nil {
 		log.Fatal(err)
 	}

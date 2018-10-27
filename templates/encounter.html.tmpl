@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>D&D Encounter</title>
+    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans" rel="stylesheet">
+    <link rel="stylesheet" href="/static/reset.css" />
+    <link rel="stylesheet" href="/static/style-all.css" />
+</head>
+<body>
+    <div class="content">
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Min</th>
+                <th>Rolled</th>
+                <th>Max</th>
+                <th>Damage Taken</th>
+            </tr>
+            <form method="post">
+                <tr>
+                    <td><input type="text" id="creatureType" name="creatureType" /></td>
+                    <td><input type="text" id="creatureName" name="creatureName" /></td>
+                    <td colspan="3"><input type="text" id="creatureHitDice" name="creatureHitDice" /></td>
+                    <td><input type="submit" value="Add" /></td>
+            </form>
+        </table>
+    </div>
+</body>

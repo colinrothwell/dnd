@@ -21,18 +21,7 @@ div.content {
     padding: 0;
     margin: 0 auto;
     background: #d8ebf4;
-    width: 30em;
     min-height: 100%;
-}
-
-ul.roll-buttons {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-
-ul.roll-buttons:after {
-    clear: both;
 }
 
 input {
@@ -45,27 +34,11 @@ input {
     width: 100%
 }
 
-ul.roll-buttons input[type=submit] {
-    display: block;
-    float: left;
-    text-align: center;
-    width: 10em;
-    padding: 1em 0;
-    margin: 0;
-    border: none;
-}
-
-ul.roll-buttons input[type=submit]:hover, input[type=submit]:hover {
-    background: #77bbdd;
-    cursor: pointer;
-}
-
 input[type=text] {
     background: #f2fbff;
     color: #66aacc;
     padding: 0.5em 0;
     margin: 1rem auto;
-    width: 18em;
 }
 
 input[type=text].default {
@@ -73,13 +46,13 @@ input[type=text].default {
     font-style: italic;
 }
 
-input#roll {
+input[type=submit] {
     margin: 1rem 0.5rem;
 }
 
-input[type=submit] {
-    margin: 1rem 0.5rem;
-    width: 8em;
+input[type=submit]:hover {
+    background: #77bbdd;
+    cursor: pointer;
 }
 
 h1, h2, h3, h4 {
@@ -118,9 +91,6 @@ h4 {
     padding: 0 0 0 0;
 }
 
-ul.previous-rolls {
-    text-align: center;
-    margin: 0 auto;
-    padding: 0;
-    list-style-type: none;
+td {
+    padding: 0.1rem;
 }

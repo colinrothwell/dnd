@@ -1,0 +1,42 @@
+div.content {
+    width: 30em;
+}
+
+ul.roll-buttons {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.roll-buttons:after {
+    clear: both;
+}
+
+ul.roll-buttons input[type=submit] {
+    display: block;
+    float: left;
+    text-align: center;
+    width: 10em;
+    padding: 1em 0;
+    margin: 0;
+    border: none;
+}
+
+ul.previous-rolls {
+    text-align: center;
+    margin: 0 auto;
+    padding: 0;
+    list-style-type: none;
+}
+
+input[type=text] {
+    width: 18em;
+}
+
+input#roll {
+    margin: 1rem 0.5rem;
+}
+
+input[type=submit] {
+    width: 8em;
+}

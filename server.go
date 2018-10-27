@@ -10,6 +10,24 @@ import (
 	"time"
 )
 
+func sumIntSlice(slice []int) int {
+	result := 0
+	for _, n := range slice {
+		result += n
+	}
+	return result
+}
+
+func GetPostHandler(handleGet http.HandlerFunc, handlePost http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			handlePost(w, r)
+		} else {
+			handleGet(w, r)
+		}
+	})
+}
+
 type DndServer struct {
 	DiceServer      DiceServer
 	EncounterServer EncounterServer
@@ -29,38 +47,6 @@ type RollTemplateValues struct {
 	LastCustomRoll string
 }
 
-func sumIntSlice(slice []int) int {
-	result := 0
-	for _, n := range slice {
-		result += n
-	}
-	return result
-}
-
-func GetPostHandler(handleGet http.HandlerFunc, handlePost http.HandlerFunc) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			handlePost(w, r)
-		} else {
-			handleGet(w, r)
-		}
-	})
-}
-
-func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	roll, err := dice.ParseDiceRollString(r.Form["roll"][0])
-	if len(r.Form["roll-custom"]) > 0 {
-		diceServer.LastCustomRoll = r.Form["roll"][0]
-	}
-	if err == nil {
-		diceServer.PreviousRolls = append(diceServer.PreviousRolls, roll.SimulateDiceRolls())
-	} else {
-		log.Println(err)
-	}
-	http.Redirect(w, r, "/", 303)
-}
-
 func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) {
 	var templateValues RollTemplateValues
 	templateValues.LastCustomRoll = diceServer.LastCustomRoll
@@ -75,6 +61,20 @@ func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	roll, err := dice.ParseDiceRollString(r.Form["roll"][0])
+	if len(r.Form["roll-custom"]) > 0 {
+		diceServer.LastCustomRoll = r.Form["roll"][0]
+	}
+	if err == nil {
+		diceServer.PreviousRolls = append(diceServer.PreviousRolls, roll.SimulateDiceRolls())
+	} else {
+		log.Println(err)
+	}
+	http.Redirect(w, r, "/", 303)
 }
 
 type EncounterServer struct {

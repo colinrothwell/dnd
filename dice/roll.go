@@ -73,6 +73,9 @@ type diceUnit struct {
 }
 
 func (dice *diceUnit) String() string {
+	if dice.Count == 1 {
+		return fmt.Sprintf("d%d", dice.Faces)
+	}
 	return fmt.Sprintf("%dd%d", dice.Count, dice.Faces)
 }
 
@@ -118,13 +121,11 @@ type Roll struct {
 }
 
 func (units diceUnitSlice) String() string {
-	result := ""
 	unitStrings := make([]string, len(units))
 	for i, unit := range units {
 		unitStrings[i] = unit.String()
 	}
-	result += strings.Join(unitStrings, " + ")
-	return result
+	return strings.Join(unitStrings, " + ")
 }
 
 func (roll *Roll) String() string {

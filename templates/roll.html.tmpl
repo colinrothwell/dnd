@@ -47,12 +47,12 @@
         <input id="submit-custom" type="submit" name="roll-custom" value="Roll!">
     </form>
     {{if .HasResult }}
-        <h4>{{ .LastRoll.DiceRolled }} = {{ .LastRoll.StringSimulatedResults }} =</h4>
+        <h4>{{ .LastRoll.Roll }} = {{ .LastRoll.StringIndividualRolls }} =</h4>
         <h1>{{ .LastRoll.Sum }}</h1>
     {{end}}
     <ul class="previous-rolls">
     {{range $index := .OlderRolls}}
-        <li>{{ .DiceRolled }} = {{ .StringSimulatedResults }} = {{ .Sum }}</li>
+        <li>{{ .Roll }} = {{ .StringIndividualRolls }} = {{ .Sum }}</li>
     {{end}}
     </ul>
 </div>

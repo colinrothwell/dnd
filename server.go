@@ -36,25 +36,25 @@ type DndServer struct {
 
 type DiceServer struct {
 	Template       *template.Template
-	PreviousRolls  []dice.DiceRollResult
+	PreviousRolls  []dice.RollResult
 	LastCustomRoll string
 }
 
 type RollTemplateValues struct {
 	HasResult      bool
-	LastRoll       dice.DiceRollResult
-	OlderRolls     chan dice.DiceRollResult
-	LastCustomRoll string
+	LastRoll       *dice.RollResult
+	OlderRolls     chan *dice.RollResult
+	LastCustomRoll *string
 }
 
 func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) {
 	var templateValues RollTemplateValues
-	templateValues.LastCustomRoll = diceServer.LastCustomRoll
+	templateValues.LastCustomRoll = &diceServer.LastCustomRoll
 	if len(diceServer.PreviousRolls) > 0 {
 		templateValues.HasResult = true
 		penultimateIndex := len(diceServer.PreviousRolls) - 1
-		templateValues.LastRoll = diceServer.PreviousRolls[penultimateIndex]
-		templateValues.OlderRolls = dice.ReverseDiceRollResultSlice(
+		templateValues.LastRoll = &diceServer.PreviousRolls[penultimateIndex]
+		templateValues.OlderRolls = dice.ReverseRollResultSlice(
 			diceServer.PreviousRolls[:penultimateIndex])
 	}
 	err := diceServer.Template.Execute(w, templateValues)
@@ -65,12 +65,12 @@ func (diceServer *DiceServer) handleGet(w http.ResponseWriter, r *http.Request) 
 
 func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	roll, err := dice.ParseDiceRollString(r.Form["roll"][0])
+	roll, err := dice.ParseRollString(r.Form["roll"][0])
 	if len(r.Form["roll-custom"]) > 0 {
 		diceServer.LastCustomRoll = r.Form["roll"][0]
 	}
 	if err == nil {
-		diceServer.PreviousRolls = append(diceServer.PreviousRolls, roll.SimulateDiceRolls())
+		diceServer.PreviousRolls = append(diceServer.PreviousRolls, roll.Simulate())
 	} else {
 		log.Println(err)
 	}
@@ -102,7 +102,7 @@ func main() {
 	log.Print("Starting dice server on localhost:1212...")
 	diceServer := DiceServer{
 		theTemplate.Lookup("roll.html.tmpl"),
-		make([]dice.DiceRollResult, 0),
+		make([]dice.RollResult, 0),
 		"Custom Roll",
 	}
 	encounterServer := EncounterServer{
@@ -112,7 +112,7 @@ func main() {
 	server := http.NewServeMux()
 	server.HandleFunc("/favicon.ico", http.NotFound)
 	server.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
-	server.HandleFunc("/encounter/", encounterServer.ServeHTTP)
+	server.Handle("/encounter/", GetPostHandler(encounterServer.handleGet, encounterServer.handlePost))
 	server.Handle("/", GetPostHandler(diceServer.handleGet, diceServer.handlePost))
 	err = http.ListenAndServe("localhost:1212", server)
 	if err != nil {

@@ -3,7 +3,7 @@ package dice
 import (
 	"errors"
 	"fmt"
-	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -68,111 +68,99 @@ func TokenisediceUnitString(diceRollString string) ([]diceUnitToken, error) {
 	return tokenised, nil
 }
 
-type diceUnit struct {
-	Count, Faces uint
+type faceCountMap struct {
+	counts map[uint]uint
+	faces  []uint
 }
 
-func (dice *diceUnit) String() string {
-	if dice.Count == 1 {
-		return fmt.Sprintf("d%d", dice.Faces)
+func createFaceCountMap() faceCountMap {
+	return faceCountMap{
+		faces: make([]uint, 0),
 	}
-	return fmt.Sprintf("%dd%d", dice.Count, dice.Faces)
 }
 
-type diceUnitResult []uint
-
-func (dice *diceUnit) SimulateValue() diceUnitResult {
-	rolls := make([]uint, 0)
-	for i := uint(0); i < dice.Count; i++ {
-		rolls = append(rolls, 1+uint(rand.Intn(int(dice.Faces))))
+func (faceCount *faceCountMap) add(count uint, faces uint) {
+	if faceCount.counts[faces] == 0 {
+		faceCount.faces = append(faceCount.faces, faces)
 	}
-	return rolls
+	faceCount.counts[faces] += count
 }
 
-func (result diceUnitResult) Sum() (sum uint) {
-	for _, num := range result {
-		sum += num
+func (faceCount *faceCountMap) sortFacesDescending() {
+	sort.Slice(faceCount.faces, func(i, j int) bool { return faceCount.faces[i] > faceCount.faces[j] })
+}
+
+func (faceCount *faceCountMap) String() string {
+	var b strings.Builder
+	faceCount.sortFacesDescending()
+	for i, face := range faceCount.faces {
+		if i != 0 {
+			b.WriteString(" + ")
+		}
+		count := faceCount.counts[face]
+		if count > 1 {
+			b.WriteString(strconv.FormatUint(uint64(count), 10))
+		}
+		b.WriteRune('d')
+		b.WriteString(strconv.FormatUint(uint64(face), 10))
 	}
-	return sum
+	return b.String()
 }
 
-func (result diceUnitResult) String() string {
-	stringSlice := make([]string, len(result))
-	for i, result := range result {
-		stringSlice[i] = strconv.FormatUint(uint64(result), 10)
+func (faceCount *faceCountMap) isEmpty() bool {
+	return len(faceCount.faces) == 0
+}
+
+func (faceCount *faceCountMap) Min() int {
+	return len(faceCount.faces)
+}
+
+func (faceCount *faceCountMap) Max() (max int) {
+	for faces, count := range faceCount.counts {
+		max += int(faces) * int(count)
 	}
-	return strings.Join(stringSlice, " + ")
+	return max
 }
-
-func (dice diceUnit) Min() uint {
-	return dice.Count
-}
-
-func (dice diceUnit) Max() uint {
-	return dice.Count * dice.Faces
-}
-
-type diceUnitSlice []diceUnit
 
 type Roll struct {
-	positive diceUnitSlice
-	negative diceUnitSlice
+	positive faceCountMap
+	negative faceCountMap
 	offset   int
 }
 
-func (units diceUnitSlice) String() string {
-	unitStrings := make([]string, len(units))
-	for i, unit := range units {
-		unitStrings[i] = unit.String()
-	}
-	return strings.Join(unitStrings, " + ")
-}
-
 func (roll *Roll) String() string {
-	result := ""
-	result += roll.positive.String()
-	if len(roll.positive) == 0 {
-		result += "-"
+	var b strings.Builder
+	b.WriteString(roll.positive.String())
+	if roll.positive.isEmpty() {
+		b.WriteRune('-')
 	} else {
-		result += " - "
+		b.WriteString(" - ")
 	}
-	negativeString := roll.negative.String()
-	if len(roll.negative) > 1 {
-		negativeString = fmt.Sprintf("(%s)", negativeString)
+	if len(roll.negative.faces) > 1 {
+		b.WriteRune('(')
 	}
-	if len(roll.negative) > 0 {
-		result += negativeString
+	if len(roll.negative.faces) > 0 {
+		b.WriteString(roll.negative.String())
+	}
+	if len(roll.negative.faces) > 1 {
+		b.WriteRune(')')
 	}
 	if roll.offset > 0 {
-		result += " + "
-		result += strconv.Itoa(roll.offset)
+		b.WriteString(" + ")
+		b.WriteString(strconv.Itoa(roll.offset))
 	} else if roll.offset < 0 {
-		result += " - "
-		result += strconv.Itoa(-roll.offset)
+		b.WriteString(" - ")
+		b.WriteString(strconv.Itoa(-roll.offset))
 	}
-	return result
-}
-
-func diceUnitSliceMin(units []diceUnit) (sum uint) {
-	for _, unit := range units {
-		sum += unit.Min()
-	}
-	return sum
-}
-
-func diceUnitSliceMax(units []diceUnit) (sum uint) {
-	for _, unit := range units {
-		sum += unit.Max()
-	}
-	return sum
+	return b.String()
 }
 
 func (roll Roll) Min() int {
-	return int(diceUnitSliceMin(roll.positive)) - int(diceUnitSliceMax(roll.negative)) + roll.offset
+	return int(roll.positive.Min()) - int(roll.negative.Max()) + roll.offset
 }
 
 func (roll Roll) Max() int {
-	return int(diceUnitSliceMax(roll.positive)) - int(diceUnitSliceMin(roll.negative)) + roll.offset
+	return int(roll.positive.Max()) - int(roll.negative.Min()) + roll.offset
 }
 
 // Need to be able to read
@@ -189,11 +177,7 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 		return nil, error
 	}
 	// Read up to the end of the string or the first add/sub token
-	rolls := &Roll{
-		make([]diceUnit, 0),
-		make([]diceUnit, 0),
-		0,
-	}
+	rolls := &Roll{createFaceCountMap(), createFaceCountMap(), 0}
 	var die []diceUnitToken
 	var nextElement SigndiceUnitToken
 	var nextElementIsAddendSpecifier bool
@@ -206,7 +190,7 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 		}
 		if nextElementIsAddendSpecifier || endIndex == len(tokenisedString) {
 			die = tokenisedString[startIndex:endIndex]
-			var newDie *diceUnit
+			var count, faces uint
 			switch len(die) {
 			case 1:
 				value, ok := die[0].(NumberdiceUnitToken)
@@ -218,6 +202,7 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 				} else {
 					rolls.offset += int(value)
 				}
+				addDie := false
 			case 2:
 				_, ok := die[0].(DdiceUnitToken)
 				if !ok {
@@ -227,7 +212,8 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 				if !valueOk {
 					return nil, errors.New("invalid number of sides marker")
 				}
-				newDie = &diceUnit{1, uint(value)}
+				count = 1
+				faces = uint(value)
 			case 3:
 				left, leftOk := die[0].(NumberdiceUnitToken)
 				if !leftOk {
@@ -241,15 +227,16 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 				if !rightOk {
 					return nil, errors.New("invalid number of sides")
 				}
-				newDie = &diceUnit{uint(left), uint(right)}
+				count = uint(left)
+				faces = uint(right)
 			default:
 				return nil, errors.New(fmt.Sprint("Invalid die ", die))
 			}
-			if newDie != nil {
+			if count != 0 {
 				if nextIsNegative {
-					rolls.negative = append(rolls.negative, *newDie)
+					rolls.negative.addDice(newDie)
 				} else {
-					rolls.positive = append(rolls.positive, *newDie)
+					rolls.positive.addDice(newDie)
 				}
 			}
 			if nextElement == SigndiceUnitToken('-') {
@@ -266,7 +253,7 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 	return rolls, nil
 }
 
-type diceUnitResultSlice []diceUnitResult
+type diceUnitResultSlice []faceCountMap
 
 func (resultSlice diceUnitResultSlice) String() string {
 	stringSlice := make([]string, len(resultSlice))
@@ -285,8 +272,8 @@ type RollResult struct {
 func (roll *Roll) Simulate() RollResult {
 	result := RollResult{
 		roll,
-		make(diceUnitResultSlice, len(roll.positive)),
-		make(diceUnitResultSlice, len(roll.negative)),
+		make(diceUnitResultSlice, len(roll.positive.faces)),
+		make(diceUnitResultSlice, len(roll.negative.faces)),
 		0,
 	}
 	for i, unit := range roll.positive {

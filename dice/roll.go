@@ -3,6 +3,7 @@ package dice
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
@@ -75,7 +76,8 @@ type faceCountMap struct {
 
 func createFaceCountMap() faceCountMap {
 	return faceCountMap{
-		faces: make([]uint, 0),
+		counts: make(map[uint]uint),
+		faces:  make([]uint, 0),
 	}
 }
 
@@ -92,7 +94,6 @@ func (faceCount *faceCountMap) sortFacesDescending() {
 
 func (faceCount *faceCountMap) String() string {
 	var b strings.Builder
-	faceCount.sortFacesDescending()
 	for i, face := range faceCount.faces {
 		if i != 0 {
 			b.WriteString(" + ")
@@ -120,6 +121,27 @@ func (faceCount *faceCountMap) Max() (max int) {
 		max += int(faces) * int(count)
 	}
 	return max
+}
+
+type faceCountMapResult struct {
+	rolls [][]uint
+	sum   uint
+}
+
+func (faceCount *faceCountMap) SimulateResult() *faceCountMapResult {
+	faceCount.sortFacesDescending()
+	var result faceCountMapResult
+	result.rolls = make([][]uint, len(faceCount.faces))
+	for i, face := range faceCount.faces {
+		count := faceCount.counts[face]
+		result.rolls[i] = make([]uint, count)
+		for j := uint(0); j < count; j++ {
+			roll := 1 + uint(rand.Intn(int(face)))
+			result.sum += roll
+			result.rolls[i][j] = roll
+		}
+	}
+	return &result
 }
 
 type Roll struct {
@@ -202,7 +224,6 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 				} else {
 					rolls.offset += int(value)
 				}
-				addDie := false
 			case 2:
 				_, ok := die[0].(DdiceUnitToken)
 				if !ok {
@@ -234,9 +255,9 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 			}
 			if count != 0 {
 				if nextIsNegative {
-					rolls.negative.addDice(newDie)
+					rolls.negative.add(count, faces)
 				} else {
-					rolls.positive.addDice(newDie)
+					rolls.positive.add(count, faces)
 				}
 			}
 			if nextElement == SigndiceUnitToken('-') {
@@ -253,47 +274,44 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 	return rolls, nil
 }
 
-type diceUnitResultSlice []faceCountMap
-
-func (resultSlice diceUnitResultSlice) String() string {
-	stringSlice := make([]string, len(resultSlice))
-	for i, result := range resultSlice {
-		stringSlice[i] = result.String()
-	}
-	return strings.Join(stringSlice, " + ")
-}
-
 type RollResult struct {
 	Roll                             *Roll
-	PositiveResults, NegativeResults diceUnitResultSlice
+	PositiveResults, NegativeResults [][]uint
 	Sum                              int
 }
 
 func (roll *Roll) Simulate() RollResult {
-	result := RollResult{
-		roll,
-		make(diceUnitResultSlice, len(roll.positive.faces)),
-		make(diceUnitResultSlice, len(roll.negative.faces)),
-		0,
-	}
-	for i, unit := range roll.positive {
-		unitResult := unit.SimulateValue()
-		result.PositiveResults[i] = unitResult
-		result.Sum += int(unitResult.Sum())
-	}
-	for i, unit := range roll.negative {
-		unitResult := unit.SimulateValue()
-		result.NegativeResults[i] = unitResult
-		result.Sum -= int(unitResult.Sum())
-	}
-	result.Sum += roll.offset
+	var result RollResult
+	result.Roll = roll
+	positiveResults := roll.positive.SimulateResult()
+	negativeResults := roll.negative.SimulateResult()
+	result.PositiveResults = positiveResults.rolls
+	result.NegativeResults = negativeResults.rolls
+	result.Sum = int(positiveResults.sum) - int(negativeResults.sum) + roll.offset
 	return result
 }
 
-func (result *RollResult) StringIndividualRolls() string {
-	return result.PositiveResults.String() + " - " +
-		result.NegativeResults.String() + " + " + strconv.Itoa(result.Roll.offset)
+func writeUint(builder *strings.Builder, x uint) {
+	builder.WriteString(strconv.FormatUint(uint64(x), 10))
 }
+
+func StringFaceCountMapResults(results [][]uint) string {
+	stringsToJoin := make([]string, len(results))
+	var faceStringBuilder strings.Builder
+	for i, rollsForFace := range results {
+		if len(rollsForFace) == 1 {
+			stringsToJoin[i] = strconv.FormatUint(uint64(rollsForFace[0]), 10)
+		} else {
+			faceStringBuilder.Reset()
+		}
+
+	}
+}
+
+// func (result *RollResult) StringIndividualRolls() string {
+// 	return result.PositiveResults.String() + " - " +
+// 		result.NegativeResults.String() + " + " + strconv.Itoa(result.Roll.offset)
+// }
 
 func ReverseRollResultSlice(slice []RollResult) chan *RollResult {
 	ret := make(chan *RollResult)

@@ -296,16 +296,35 @@ func writeUint(builder *strings.Builder, x uint) {
 }
 
 func StringFaceCountMapResults(results [][]uint) string {
-	stringsToJoin := make([]string, len(results))
-	var faceStringBuilder strings.Builder
-	for i, rollsForFace := range results {
-		if len(rollsForFace) == 1 {
-			stringsToJoin[i] = strconv.FormatUint(uint64(rollsForFace[0]), 10)
-		} else {
-			faceStringBuilder.Reset()
+	var stringsToJoin []string
+	if len(results) == 1 {
+		// Avoid wrapping results of single face-type in bracket unecessarily
+		stringsToJoin = make([]string, len(results[0]))
+		for i, roll := range results[0] {
+			stringsToJoin[i] = strconv.FormatUint(uint64(roll), 10)
 		}
+	} else {
+		stringsToJoin = make([]string, len(results))
+		var faceStringBuilder strings.Builder
+		for i, rollsForFace := range results {
+			if len(rollsForFace) == 1 {
+				stringsToJoin[i] = strconv.FormatUint(uint64(rollsForFace[0]), 10)
+			} else {
+				faceStringBuilder.Reset()
+				faceStringBuilder.WriteRune('(')
+				for j, roll := range rollsForFace {
+					if j != 0 {
+						faceStringBuilder.WriteString(" + ")
+					}
+					writeUint(&faceStringBuilder, roll)
 
+				}
+				faceStringBuilder.WriteRune(')')
+				stringsToJoin[i] = faceStringBuilder.String()
+			}
+		}
 	}
+	return strings.Join(stringsToJoin, " + ")
 }
 
 // func (result *RollResult) StringIndividualRolls() string {

@@ -327,10 +327,10 @@ func StringFaceCountMapResults(results [][]uint) string {
 	return strings.Join(stringsToJoin, " + ")
 }
 
-// func (result *RollResult) StringIndividualRolls() string {
-// 	return result.PositiveResults.String() + " - " +
-// 		result.NegativeResults.String() + " + " + strconv.Itoa(result.Roll.offset)
-// }
+func (result *RollResult) StringIndividualRolls() string {
+	return StringFaceCountMapResults(result.PositiveResults) + " - " +
+		StringFaceCountMapResults(result.NegativeResults) + " + " + strconv.Itoa(result.Roll.offset)
+}
 
 func ReverseRollResultSlice(slice []RollResult) chan *RollResult {
 	ret := make(chan *RollResult)

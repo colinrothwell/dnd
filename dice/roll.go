@@ -153,10 +153,12 @@ type Roll struct {
 func (roll *Roll) String() string {
 	var b strings.Builder
 	b.WriteString(roll.positive.String())
-	if roll.positive.isEmpty() {
-		b.WriteRune('-')
-	} else {
-		b.WriteString(" - ")
+	if !roll.negative.isEmpty() {
+		if roll.positive.isEmpty() {
+			b.WriteRune('-')
+		} else {
+			b.WriteString(" - ")
+		}
 	}
 	if len(roll.negative.faces) > 1 {
 		b.WriteRune('(')
@@ -167,12 +169,20 @@ func (roll *Roll) String() string {
 	if len(roll.negative.faces) > 1 {
 		b.WriteRune(')')
 	}
+	// This would be a stupid thing to do.
+	offsetOnly := roll.positive.isEmpty() && roll.negative.isEmpty()
 	if roll.offset > 0 {
-		b.WriteString(" + ")
+		if !offsetOnly {
+			b.WriteString(" + ")
+		}
 		b.WriteString(strconv.Itoa(roll.offset))
 	} else if roll.offset < 0 {
-		b.WriteString(" - ")
-		b.WriteString(strconv.Itoa(-roll.offset))
+		if offsetOnly {
+			b.WriteString(strconv.Itoa(roll.offset))
+		} else {
+			b.WriteString(" - ")
+			b.WriteString(strconv.Itoa(-roll.offset))
+		}
 	}
 	return b.String()
 }

@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -115,19 +116,42 @@ func (encounterServer *EncounterServer) handleGet(w http.ResponseWriter, r *http
 
 func (encounterServer *EncounterServer) handlePost(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	roll, err := dice.ParseRollString(r.Form["creatureHitDice"][0])
-	if err != nil {
-		log.Printf("Error parsing creature dice string - %v", err)
+	lastSlashPos := strings.LastIndexByte(r.URL.Path, '/')
+	if lastSlashPos == len(r.URL.Path)-1 { // Last characters
+		roll, err := dice.ParseRollString(r.Form["creatureHitDice"][0])
+		if err != nil {
+			log.Printf("Error parsing creature dice string - %v", err)
+			http.Redirect(w, r, r.RequestURI, 303)
+			return
+		}
+		newCreature := *creature.Create(
+			r.Form["creatureType"][0],
+			r.Form["creatureName"][0],
+			roll)
+		encounterServer.creatures = append(encounterServer.creatures, newCreature)
 		http.Redirect(w, r, r.RequestURI, 303)
-		return
+	} else {
+		urlParts := strings.Split(r.URL.Path, "/")
+		redirectURL := strings.Join(urlParts[:len(urlParts)-1], "/")
+		creatureToDamageString := urlParts[len(urlParts)-1]
+		creatureToDamage, err := strconv.Atoi(creatureToDamageString)
+		if err != nil {
+			log.Printf("Error parsing int from %v - %v", creatureToDamageString, err)
+			http.Redirect(w, r, redirectURL, 303)
+			return
+		}
+		if creatureToDamage >= len(encounterServer.creatures) {
+			log.Printf("Invalid creature (out of range) - %v", creatureToDamage)
+			http.Redirect(w, r, redirectURL, 303)
+			return
+		}
+		damageAmount, err := strconv.Atoi(r.Form["damageAmount"][0])
+		if err != nil {
+			log.Printf("Couldn't parse damage amount - %v", err)
+		}
+		encounterServer.creatures[creatureToDamage].DamageTaken += damageAmount
+		http.Redirect(w, r, redirectURL, 303)
 	}
-	newCreature := *creature.Create(
-		r.Form["creatureType"][0],
-		r.Form["creatureName"][0],
-		roll)
-	// TODO: Fix this if/when it becomes a problem
-	encounterServer.creatures = append(encounterServer.creatures, newCreature)
-	http.Redirect(w, r, r.RequestURI, 303)
 }
 
 func main() {

@@ -20,10 +20,21 @@
             </tr>
             <form method="post">
                 <tr>
-                    <td><input type="text" id="creatureType" name="creatureType" /></td>
+                    <td><input type="text" id="creatureType" name="creatureType" value="{{.NextCreatureType.Name}}" /></td>
                     <td><input type="text" id="creatureName" name="creatureName" /></td>
-                    <td colspan="3"><input type="text" id="creatureHitDice" name="creatureHitDice" /></td>
+                    <td colspan="3"><input type="text" id="creatureHitDice" name="creatureHitDice" value="{{.NextCreatureType.HitDice}}" /></td>
                     <td><input type="submit" value="Add" /></td>
+                </tr>
+                {{range .Creatures}}
+                    <tr>
+                        <td>{{.Type.Name}}</td>
+                        <td>{{.Name}}</td>
+                        <td>{{.Type.HitDice.Min}}</td>
+                        <td>{{.RolledHealth}}</td>
+                        <td>{{.Type.HitDice.Max}}</td>
+                        <td>{{.DamageTaken}}</td>
+                    </tr>
+                {{end}}
             </form>
         </table>
     </div>

@@ -51,7 +51,7 @@
         <h1>{{ .LastRoll.Sum }}</h1>
     {{end}}
     <ul class="previous-rolls">
-    {{range $index := .OlderRolls}}
+    {{range .OlderRolls}}
         <li>{{ .Roll }} = {{ .StringIndividualRolls }} = {{ .Sum }}</li>
     {{end}}
     </ul>

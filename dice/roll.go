@@ -112,8 +112,11 @@ func (faceCount *faceCountMap) isEmpty() bool {
 	return len(faceCount.faces) == 0
 }
 
-func (faceCount *faceCountMap) Min() int {
-	return len(faceCount.faces)
+func (faceCount *faceCountMap) Min() (min int) {
+	for _, count := range faceCount.counts {
+		min += int(count)
+	}
+	return min
 }
 
 func (faceCount *faceCountMap) Max() (max int) {
@@ -150,6 +153,26 @@ type Roll struct {
 	offset   int
 }
 
+func (roll *Roll) stringOffset() string {
+	var b strings.Builder
+	// This would be a stupid thing to do.
+	offsetOnly := roll.positive.isEmpty() && roll.negative.isEmpty()
+	if roll.offset > 0 {
+		if !offsetOnly {
+			b.WriteString(" + ")
+		}
+		b.WriteString(strconv.Itoa(roll.offset))
+	} else if roll.offset < 0 {
+		if offsetOnly {
+			b.WriteString(strconv.Itoa(roll.offset))
+		} else {
+			b.WriteString(" - ")
+			b.WriteString(strconv.Itoa(-roll.offset))
+		}
+	}
+	return b.String()
+}
+
 func (roll *Roll) String() string {
 	var b strings.Builder
 	b.WriteString(roll.positive.String())
@@ -169,21 +192,7 @@ func (roll *Roll) String() string {
 	if len(roll.negative.faces) > 1 {
 		b.WriteRune(')')
 	}
-	// This would be a stupid thing to do.
-	offsetOnly := roll.positive.isEmpty() && roll.negative.isEmpty()
-	if roll.offset > 0 {
-		if !offsetOnly {
-			b.WriteString(" + ")
-		}
-		b.WriteString(strconv.Itoa(roll.offset))
-	} else if roll.offset < 0 {
-		if offsetOnly {
-			b.WriteString(strconv.Itoa(roll.offset))
-		} else {
-			b.WriteString(" - ")
-			b.WriteString(strconv.Itoa(-roll.offset))
-		}
-	}
+	b.WriteString(roll.stringOffset())
 	return b.String()
 }
 
@@ -338,8 +347,16 @@ func StringFaceCountMapResults(results [][]uint) string {
 }
 
 func (result *RollResult) StringIndividualRolls() string {
-	return StringFaceCountMapResults(result.PositiveResults) + " - " +
-		StringFaceCountMapResults(result.NegativeResults) + " + " + strconv.Itoa(result.Roll.offset)
+	var b strings.Builder
+	if len(result.PositiveResults) > 0 {
+		b.WriteString(StringFaceCountMapResults(result.PositiveResults))
+	}
+	if len(result.NegativeResults) > 0 {
+		b.WriteString(" - ")
+		b.WriteString(StringFaceCountMapResults(result.NegativeResults))
+	}
+	b.WriteString(result.Roll.stringOffset())
+	return b.String()
 }
 
 func ReverseRollResultSlice(slice []RollResult) chan *RollResult {

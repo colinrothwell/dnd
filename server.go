@@ -77,20 +77,39 @@ func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request)
 	http.Redirect(w, r, "/", 303)
 }
 
+type EncounterValues struct {
+	Creatures        []creature.Creature
+	NextCreatureType *creature.Type
+}
+
 type EncounterServer struct {
-	Template  *template.Template
-	Creatures []creature.Creature
+	template *template.Template
+	values   *EncounterValues
 }
 
 func (encounterServer *EncounterServer) handleGet(w http.ResponseWriter, r *http.Request) {
-	err := encounterServer.Template.Execute(w, struct{}{})
+	err := encounterServer.template.Execute(w, encounterServer.values)
 	if err != nil {
 		log.Print(err)
 	}
 }
 
 func (encounterServer *EncounterServer) handlePost(w http.ResponseWriter, r *http.Request) {
-
+	r.ParseForm()
+	roll, err := dice.ParseRollString(r.Form["creatureHitDice"][0])
+	if err != nil {
+		log.Printf("Error parsing creature dice string - %v", err)
+		http.Redirect(w, r, r.RequestURI, 303)
+		return
+	}
+	newCreature := *creature.Create(
+		r.Form["creatureType"][0],
+		r.Form["creatureName"][0],
+		roll)
+	// TODO: Fix this if/when it becomes a problem
+	encounterServer.values.Creatures = append([]creature.Creature{newCreature}, encounterServer.values.Creatures...)
+	encounterServer.values.NextCreatureType = newCreature.Type
+	http.Redirect(w, r, r.RequestURI, 303)
 }
 
 func main() {
@@ -107,7 +126,7 @@ func main() {
 	}
 	encounterServer := EncounterServer{
 		theTemplate.Lookup("encounter.html.tmpl"),
-		make([]creature.Creature, 0),
+		&EncounterValues{make([]creature.Creature, 0), &creature.Type{HitDice: &dice.Roll{}}},
 	}
 	server := http.NewServeMux()
 	server.HandleFunc("/favicon.ico", http.NotFound)

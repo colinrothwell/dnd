@@ -38,16 +38,11 @@ input[type=text] {
     background: #f2fbff;
     color: #66aacc;
     padding: 0.5em 0;
-    margin: 1rem auto;
 }
 
 input[type=text].default {
     color: #77bbdd;
     font-style: italic;
-}
-
-input[type=submit] {
-    margin: 1rem 0.5rem;
 }
 
 input[type=submit]:hover {

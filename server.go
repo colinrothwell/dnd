@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -77,18 +78,36 @@ func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request)
 	http.Redirect(w, r, "/", 303)
 }
 
-type EncounterValues struct {
-	Creatures        []creature.Creature
-	NextCreatureType *creature.Type
+type CreatureInformation struct {
+	Creature  creature.Creature
+	DamageURL string
+}
+
+type EncounterData struct {
+	CreatureInformation                       []CreatureInformation
+	NextCreatureTypeName, NextCreatureHitDice string
 }
 
 type EncounterServer struct {
-	template *template.Template
-	values   *EncounterValues
+	template  *template.Template
+	creatures []creature.Creature
 }
 
 func (encounterServer *EncounterServer) handleGet(w http.ResponseWriter, r *http.Request) {
-	err := encounterServer.template.Execute(w, encounterServer.values)
+	cis := make([]CreatureInformation, len(encounterServer.creatures))
+	cc := len(encounterServer.creatures)
+	for i, c := range encounterServer.creatures {
+		ci := cc - 1 - i
+		cis[ci].Creature = c
+		cis[ci].DamageURL = r.RequestURI + strconv.Itoa(i)
+	}
+	data := EncounterData{cis, "", ""}
+	if cc > 0 {
+		nextCreatureType := encounterServer.creatures[cc-1].Type
+		data.NextCreatureTypeName = nextCreatureType.Name
+		data.NextCreatureHitDice = nextCreatureType.HitDice.String()
+	}
+	err := encounterServer.template.Execute(w, data)
 	if err != nil {
 		log.Print(err)
 	}
@@ -107,8 +126,7 @@ func (encounterServer *EncounterServer) handlePost(w http.ResponseWriter, r *htt
 		r.Form["creatureName"][0],
 		roll)
 	// TODO: Fix this if/when it becomes a problem
-	encounterServer.values.Creatures = append([]creature.Creature{newCreature}, encounterServer.values.Creatures...)
-	encounterServer.values.NextCreatureType = newCreature.Type
+	encounterServer.creatures = append(encounterServer.creatures, newCreature)
 	http.Redirect(w, r, r.RequestURI, 303)
 }
 
@@ -126,7 +144,7 @@ func main() {
 	}
 	encounterServer := EncounterServer{
 		theTemplate.Lookup("encounter.html.tmpl"),
-		&EncounterValues{make([]creature.Creature, 0), &creature.Type{HitDice: &dice.Roll{}}},
+		make([]creature.Creature, 0),
 	}
 	server := http.NewServeMux()
 	server.HandleFunc("/favicon.ico", http.NotFound)

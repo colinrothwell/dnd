@@ -31,6 +31,7 @@ ul.previous-rolls {
 
 input[type=text] {
     width: 18em;
+    margin: 1rem auto;
 }
 
 input#roll {
@@ -39,4 +40,5 @@ input#roll {
 
 input[type=submit] {
     width: 8em;
+    margin: 1rem 0.5rem;
 }

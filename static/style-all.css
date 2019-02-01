@@ -89,3 +89,8 @@ h4 {
 td {
     padding: 0.1rem;
 }
+
+td.dead {
+    color: #fff;
+    background: #E59A9a;
+}

@@ -80,8 +80,9 @@ func (diceServer *DiceServer) handlePost(w http.ResponseWriter, r *http.Request)
 }
 
 type CreatureInformation struct {
-	Creature  creature.Creature
-	DamageURL string
+	Type, Name                                                   string
+	MinHealth, RolledHealth, MaxHealth, DamageTaken              int
+	DamageURL, MinHealthClass, RolledHealthClass, MaxHealthClass string
 }
 
 type EncounterData struct {
@@ -98,9 +99,28 @@ func (encounterServer *EncounterServer) handleGet(w http.ResponseWriter, r *http
 	cis := make([]CreatureInformation, len(encounterServer.creatures))
 	cc := len(encounterServer.creatures)
 	for i, c := range encounterServer.creatures {
+		var minHC, rolledHC, maxHC string
+		if c.DamageTaken >= c.Type.HitDice.Min() {
+			minHC = "dead"
+			if c.DamageTaken >= c.RolledHealth {
+				rolledHC = "dead"
+				if c.DamageTaken >= c.Type.HitDice.Max() {
+					maxHC = "dead"
+				}
+			}
+		}
 		ci := cc - 1 - i
-		cis[ci].Creature = c
-		cis[ci].DamageURL = r.RequestURI + strconv.Itoa(i)
+		cis[ci] = CreatureInformation{
+			c.Type.Name,
+			c.Name,
+			c.Type.HitDice.Min(),
+			c.RolledHealth,
+			c.Type.HitDice.Max(),
+			c.DamageTaken,
+			r.RequestURI + strconv.Itoa(i),
+			minHC,
+			rolledHC,
+			maxHC}
 	}
 	data := EncounterData{cis, "", ""}
 	if cc > 0 {

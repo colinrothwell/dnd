@@ -28,14 +28,12 @@
                 </tr>
                 {{range .CreatureInformation}}
                     <tr>
-                        {{with .Creature}}
-                            <td>{{.Type.Name}}</td>
+                            <td>{{.Type}}</td>
                             <td>{{.Name}}</td>
-                            <td>{{.Type.HitDice.Min}}</td>
-                            <td>{{.RolledHealth}}</td>
-                            <td>{{.Type.HitDice.Max}}</td>
+                            <td class="{{.MinHealthClass}}">{{.MinHealth}}</td>
+                            <td class="{{.RolledHealthClass}}">{{.RolledHealth}}</td>
+                            <td class="{{.MaxHealthClass}}">{{.MaxHealth}}</td>
                             <td>{{.DamageTaken}}</td>
-                        {{end}}
                         <form method="post" action="{{.DamageURL}}">
                             <td><input type="text" id="damageAmount" name="damageAmount" value="" /></td>
                             <td><input type="submit" value="Damage" /></td>

@@ -90,7 +90,12 @@ td {
     padding: 0.1rem;
 }
 
+td.damaged {
+    color: #fff;
+    background: #E5D69A;
+}
+
 td.dead {
     color: #fff;
-    background: #E59A9a;
+    background: #E59A9A;
 }

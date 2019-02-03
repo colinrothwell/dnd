@@ -1,7 +1,6 @@
 package main
 
 import (
-	"dnd/creature"
 	"encoding/gob"
 	"fmt"
 	"html/template"
@@ -84,22 +83,8 @@ func (s *initialisationServer) HandleGet(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *initialisationServer) initialiseWithNewParty(name string) error {
-	s.Party = &Party{
-		filepath.Join(s.dataDir, name+".party.gob"),
-		name,
-		make([]creature.Creature, 0)}
-	file, err := os.Create(s.Party.Filename)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Printf("Error closing party file - %v", err)
-		}
-	}()
-	encoder := gob.NewEncoder(file)
-	err = encoder.Encode(s.Party)
+	s.Party = NewParty(s.dataDir, name)
+	err := s.Party.Save()
 	if err != nil {
 		log.Printf("Error encoding party - %v", err)
 	}

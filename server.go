@@ -52,9 +52,8 @@ type DndServer struct {
 }
 
 type DiceServer struct {
-	Template       *template.Template
-	PreviousRolls  []dice.RollResult
-	LastCustomRoll string
+	Template *template.Template
+	Party    *Party
 }
 
 type RollTemplateValues struct {
@@ -66,13 +65,13 @@ type RollTemplateValues struct {
 
 func (diceServer *DiceServer) HandleGet(w http.ResponseWriter, r *http.Request) {
 	var templateValues RollTemplateValues
-	templateValues.LastCustomRoll = &diceServer.LastCustomRoll
-	if len(diceServer.PreviousRolls) > 0 {
+	templateValues.LastCustomRoll = &diceServer.Party.LastCustomRoll
+	if len(diceServer.Party.PreviousRolls) > 0 {
 		templateValues.HasResult = true
-		penultimateIndex := len(diceServer.PreviousRolls) - 1
-		templateValues.LastRoll = &diceServer.PreviousRolls[penultimateIndex]
+		penultimateIndex := len(diceServer.Party.PreviousRolls) - 1
+		templateValues.LastRoll = &diceServer.Party.PreviousRolls[penultimateIndex]
 		templateValues.OlderRolls = dice.ReverseRollResultSlice(
-			diceServer.PreviousRolls[:penultimateIndex])
+			diceServer.Party.PreviousRolls[:penultimateIndex])
 	}
 	err := diceServer.Template.Execute(w, templateValues)
 	if err != nil {
@@ -84,13 +83,14 @@ func (diceServer *DiceServer) HandlePost(w http.ResponseWriter, r *http.Request)
 	r.ParseForm()
 	roll, err := dice.ParseRollString(r.Form["roll"][0])
 	if len(r.Form["roll-custom"]) > 0 {
-		diceServer.LastCustomRoll = r.Form["roll"][0]
+		diceServer.Party.LastCustomRoll = r.Form["roll"][0]
 	}
 	if err == nil {
-		diceServer.PreviousRolls = append(diceServer.PreviousRolls, roll.Simulate())
+		diceServer.Party.PreviousRolls = append(diceServer.Party.PreviousRolls, roll.Simulate())
 	} else {
 		log.Println(err)
 	}
+	diceServer.Party.Save()
 	http.Redirect(w, r, "/", 303)
 }
 
@@ -100,11 +100,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print("Starting dice server on localhost:1212...")
+	log.Print("Starting encounter server on localhost:1212...")
 	diceServer := DiceServer{
 		theTemplate.Lookup("roll.html.tmpl"),
-		make([]dice.RollResult, 0),
-		"Custom Roll"}
+		nil}
 	encounterServer := EncounterServer{
 		theTemplate.Lookup("encounter.html.tmpl"),
 		nil}
@@ -132,6 +131,7 @@ func main() {
 		} else {
 			StandardGetPostHandler(initialisationHandler).ServeHTTP(w, r)
 			if initialisationHandler.InitialisationComplete {
+				diceServer.Party = initialisationHandler.Party
 				encounterServer.party = initialisationHandler.Party
 			}
 		}

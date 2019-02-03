@@ -69,36 +69,36 @@ func TokenisediceUnitString(diceRollString string) ([]diceUnitToken, error) {
 	return tokenised, nil
 }
 
-type faceCountMap struct {
-	counts map[uint]uint
-	faces  []uint
+type FaceCountMap struct {
+	Counts map[uint]uint
+	Faces  []uint
 }
 
-func createFaceCountMap() faceCountMap {
-	return faceCountMap{
-		counts: make(map[uint]uint),
-		faces:  make([]uint, 0),
+func createFaceCountMap() FaceCountMap {
+	return FaceCountMap{
+		Counts: make(map[uint]uint),
+		Faces:  make([]uint, 0),
 	}
 }
 
-func (faceCount *faceCountMap) add(count uint, faces uint) {
-	if faceCount.counts[faces] == 0 {
-		faceCount.faces = append(faceCount.faces, faces)
+func (faceCount *FaceCountMap) add(count uint, faces uint) {
+	if faceCount.Counts[faces] == 0 {
+		faceCount.Faces = append(faceCount.Faces, faces)
 	}
-	faceCount.counts[faces] += count
+	faceCount.Counts[faces] += count
 }
 
-func (faceCount *faceCountMap) sortFacesDescending() {
-	sort.Slice(faceCount.faces, func(i, j int) bool { return faceCount.faces[i] > faceCount.faces[j] })
+func (faceCount *FaceCountMap) sortFacesDescending() {
+	sort.Slice(faceCount.Faces, func(i, j int) bool { return faceCount.Faces[i] > faceCount.Faces[j] })
 }
 
-func (faceCount *faceCountMap) String() string {
+func (faceCount *FaceCountMap) String() string {
 	var b strings.Builder
-	for i, face := range faceCount.faces {
+	for i, face := range faceCount.Faces {
 		if i != 0 {
 			b.WriteString(" + ")
 		}
-		count := faceCount.counts[face]
+		count := faceCount.Counts[face]
 		if count > 1 {
 			b.WriteString(strconv.FormatUint(uint64(count), 10))
 		}
@@ -108,19 +108,19 @@ func (faceCount *faceCountMap) String() string {
 	return b.String()
 }
 
-func (faceCount *faceCountMap) isEmpty() bool {
-	return len(faceCount.faces) == 0
+func (faceCount *FaceCountMap) isEmpty() bool {
+	return len(faceCount.Faces) == 0
 }
 
-func (faceCount *faceCountMap) Min() (min int) {
-	for _, count := range faceCount.counts {
+func (faceCount *FaceCountMap) Min() (min int) {
+	for _, count := range faceCount.Counts {
 		min += int(count)
 	}
 	return min
 }
 
-func (faceCount *faceCountMap) Max() (max int) {
-	for faces, count := range faceCount.counts {
+func (faceCount *FaceCountMap) Max() (max int) {
+	for faces, count := range faceCount.Counts {
 		max += int(faces) * int(count)
 	}
 	return max
@@ -131,12 +131,12 @@ type faceCountMapResult struct {
 	sum   uint
 }
 
-func (faceCount *faceCountMap) SimulateResult() *faceCountMapResult {
+func (faceCount *FaceCountMap) SimulateResult() *faceCountMapResult {
 	faceCount.sortFacesDescending()
 	var result faceCountMapResult
-	result.rolls = make([][]uint, len(faceCount.faces))
-	for i, face := range faceCount.faces {
-		count := faceCount.counts[face]
+	result.rolls = make([][]uint, len(faceCount.Faces))
+	for i, face := range faceCount.Faces {
+		count := faceCount.Counts[face]
 		result.rolls[i] = make([]uint, count)
 		for j := uint(0); j < count; j++ {
 			roll := 1 + uint(rand.Intn(int(face)))
@@ -148,26 +148,26 @@ func (faceCount *faceCountMap) SimulateResult() *faceCountMapResult {
 }
 
 type Roll struct {
-	positive faceCountMap
-	negative faceCountMap
-	offset   int
+	Positive FaceCountMap
+	Negative FaceCountMap
+	Offset   int
 }
 
 func (roll *Roll) stringOffset() string {
 	var b strings.Builder
 	// This would be a stupid thing to do.
-	offsetOnly := roll.positive.isEmpty() && roll.negative.isEmpty()
-	if roll.offset > 0 {
+	offsetOnly := roll.Positive.isEmpty() && roll.Negative.isEmpty()
+	if roll.Offset > 0 {
 		if !offsetOnly {
 			b.WriteString(" + ")
 		}
-		b.WriteString(strconv.Itoa(roll.offset))
-	} else if roll.offset < 0 {
+		b.WriteString(strconv.Itoa(roll.Offset))
+	} else if roll.Offset < 0 {
 		if offsetOnly {
-			b.WriteString(strconv.Itoa(roll.offset))
+			b.WriteString(strconv.Itoa(roll.Offset))
 		} else {
 			b.WriteString(" - ")
-			b.WriteString(strconv.Itoa(-roll.offset))
+			b.WriteString(strconv.Itoa(-roll.Offset))
 		}
 	}
 	return b.String()
@@ -175,21 +175,21 @@ func (roll *Roll) stringOffset() string {
 
 func (roll *Roll) String() string {
 	var b strings.Builder
-	b.WriteString(roll.positive.String())
-	if !roll.negative.isEmpty() {
-		if roll.positive.isEmpty() {
+	b.WriteString(roll.Positive.String())
+	if !roll.Negative.isEmpty() {
+		if roll.Positive.isEmpty() {
 			b.WriteRune('-')
 		} else {
 			b.WriteString(" - ")
 		}
 	}
-	if len(roll.negative.faces) > 1 {
+	if len(roll.Negative.Faces) > 1 {
 		b.WriteRune('(')
 	}
-	if len(roll.negative.faces) > 0 {
-		b.WriteString(roll.negative.String())
+	if len(roll.Negative.Faces) > 0 {
+		b.WriteString(roll.Negative.String())
 	}
-	if len(roll.negative.faces) > 1 {
+	if len(roll.Negative.Faces) > 1 {
 		b.WriteRune(')')
 	}
 	b.WriteString(roll.stringOffset())
@@ -197,11 +197,11 @@ func (roll *Roll) String() string {
 }
 
 func (roll Roll) Min() int {
-	return int(roll.positive.Min()) - int(roll.negative.Max()) + roll.offset
+	return int(roll.Positive.Min()) - int(roll.Negative.Max()) + roll.Offset
 }
 
 func (roll Roll) Max() int {
-	return int(roll.positive.Max()) - int(roll.negative.Min()) + roll.offset
+	return int(roll.Positive.Max()) - int(roll.Negative.Min()) + roll.Offset
 }
 
 // Need to be able to read
@@ -239,9 +239,9 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 					return nil, errors.New("invalid die format")
 				}
 				if nextIsNegative {
-					rolls.offset -= int(value)
+					rolls.Offset -= int(value)
 				} else {
-					rolls.offset += int(value)
+					rolls.Offset += int(value)
 				}
 			case 2:
 				_, ok := die[0].(DdiceUnitToken)
@@ -274,9 +274,9 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 			}
 			if count != 0 {
 				if nextIsNegative {
-					rolls.negative.add(count, faces)
+					rolls.Negative.add(count, faces)
 				} else {
-					rolls.positive.add(count, faces)
+					rolls.Positive.add(count, faces)
 				}
 			}
 			if nextElement == SigndiceUnitToken('-') {
@@ -302,11 +302,11 @@ type RollResult struct {
 func (roll *Roll) Simulate() RollResult {
 	var result RollResult
 	result.Roll = roll
-	positiveResults := roll.positive.SimulateResult()
-	negativeResults := roll.negative.SimulateResult()
+	positiveResults := roll.Positive.SimulateResult()
+	negativeResults := roll.Negative.SimulateResult()
 	result.PositiveResults = positiveResults.rolls
 	result.NegativeResults = negativeResults.rolls
-	result.Sum = int(positiveResults.sum) - int(negativeResults.sum) + roll.offset
+	result.Sum = int(positiveResults.sum) - int(negativeResults.sum) + roll.Offset
 	return result
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"dnd/dice"
 	"html/template"
 	"log"
 	"math/rand"
@@ -51,91 +50,40 @@ type DndServer struct {
 	StaticServer    http.Handler
 }
 
-type DiceServer struct {
-	Template *template.Template
-	Party    *Party
-}
-
-type RollTemplateValues struct {
-	HasResult      bool
-	LastRoll       *dice.RollResult
-	OlderRolls     chan *dice.RollResult
-	LastCustomRoll *string
-}
-
-func (diceServer *DiceServer) HandleGet(w http.ResponseWriter, r *http.Request) {
-	var templateValues RollTemplateValues
-	templateValues.LastCustomRoll = &diceServer.Party.LastCustomRoll
-	if len(diceServer.Party.PreviousRolls) > 0 {
-		templateValues.HasResult = true
-		penultimateIndex := len(diceServer.Party.PreviousRolls) - 1
-		templateValues.LastRoll = &diceServer.Party.PreviousRolls[penultimateIndex]
-		templateValues.OlderRolls = dice.ReverseRollResultSlice(
-			diceServer.Party.PreviousRolls[:penultimateIndex])
-	}
-	err := diceServer.Template.Execute(w, templateValues)
-	if err != nil {
-		log.Print(err)
-	}
-}
-
-func (diceServer *DiceServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	roll, err := dice.ParseRollString(r.Form["roll"][0])
-	if len(r.Form["roll-custom"]) > 0 {
-		diceServer.Party.LastCustomRoll = r.Form["roll"][0]
-	}
-	if err == nil {
-		diceServer.Party.PreviousRolls = append(diceServer.Party.PreviousRolls, roll.Simulate())
-	} else {
-		log.Println(err)
-	}
-	diceServer.Party.Save()
-	http.Redirect(w, r, "/", 303)
-}
-
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	theTemplate, err := template.ParseGlob("templates/*")
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print("Starting encounter server on localhost:1212...")
-	diceServer := DiceServer{
-		theTemplate.Lookup("roll.html.tmpl"),
-		nil}
-	encounterServer := EncounterServer{
-		theTemplate.Lookup("encounter.html.tmpl"),
-		nil}
-
-	// This is a bit messy to always get the same static handling, but stateful otherwise.
-	// Its possible all this chaining and calls is inefficient, but it shouldn't be a very hot path.
-	// Maybe writing a local application while using exclusively server-side logic is an unusual,
-	// bad, and not-well-supported pattern. Who knew?
-	server := http.NewServeMux()
-	server.HandleFunc("/favicon.ico", http.NotFound)
-	server.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 
 	initialisationHandler, err := newInitialisationServer(getDataDir(), theTemplate.Lookup("choosegroup.html.tmpl"))
 	if err != nil {
 		log.Fatalf("Catacylsmic error initialising - %v", err)
 	}
 
-	logicServer := http.NewServeMux()
-	logicServer.Handle("/encounter/", StandardGetPostHandler(&encounterServer))
-	logicServer.Handle("/", StandardGetPostHandler(&diceServer))
-
+	server := http.NewServeMux()
+	server.HandleFunc("/favicon.ico", http.NotFound)
+	server.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 	server.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		logicServer := http.NewServeMux()
 		if initialisationHandler.InitialisationComplete {
 			logicServer.ServeHTTP(w, r)
 		} else {
 			StandardGetPostHandler(initialisationHandler).ServeHTTP(w, r)
 			if initialisationHandler.InitialisationComplete {
-				diceServer.Party = initialisationHandler.Party
-				encounterServer.party = initialisationHandler.Party
+				diceServer := DiceServer{
+					theTemplate.Lookup("roll.html.tmpl"),
+					initialisationHandler.Party}
+				encounterServer := EncounterServer{
+					theTemplate.Lookup("encounter.html.tmpl"),
+					initialisationHandler.Party}
+				logicServer.Handle("/encounter/", StandardGetPostHandler(&encounterServer))
+				logicServer.Handle("/", StandardGetPostHandler(&diceServer))
 			}
 		}
 	})
+	log.Print("Starting encounter server on localhost:1212...")
 	err = http.ListenAndServe("localhost:1212", server)
 	if err != nil {
 		log.Fatal(err)

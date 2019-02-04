@@ -25,11 +25,10 @@ type EncounterServer struct {
 	party    *Party
 }
 
-func (encounterServer *EncounterServer) HandleGet(w http.ResponseWriter, r *http.Request) {
-	creatures := encounterServer.party.EncounterCreatures
-	creatureCount := len(creatures)
+func (s *EncounterServer) HandleGet(w http.ResponseWriter, r *http.Request) {
+	creatureCount := len(s.party.EncounterCreatures)
 	creatureInformations := make([]CreatureInformation, creatureCount)
-	for i, creature := range creatures {
+	for i, creature := range s.party.EncounterCreatures {
 		var minHC, rolledHC, maxHC string
 		if 2*creature.DamageTaken >= creature.RolledHealth {
 			rolledHC = "damaged"
@@ -58,18 +57,17 @@ func (encounterServer *EncounterServer) HandleGet(w http.ResponseWriter, r *http
 	}
 	data := EncounterData{creatureInformations, "", ""}
 	if creatureCount > 0 {
-		nextCreatureType := creatures[creatureCount-1].Type
+		nextCreatureType := s.party.EncounterCreatures[creatureCount-1].Type
 		data.NextCreatureTypeName = nextCreatureType.Name
 		data.NextCreatureHitDice = nextCreatureType.HitDice.String()
 	}
-	err := encounterServer.template.Execute(w, data)
+	err := s.template.Execute(w, data)
 	if err != nil {
 		log.Print(err)
 	}
 }
 
-func (encounterServer *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	creatures := encounterServer.party.EncounterCreatures
+func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	redirectURL, arg := getURLFunctionAndArgument(r.URL)
 	if arg == "" {
@@ -83,8 +81,7 @@ func (encounterServer *EncounterServer) HandlePost(w http.ResponseWriter, r *htt
 			r.Form["creatureType"][0],
 			r.Form["creatureName"][0],
 			roll)
-		creatures = append(creatures, newCreature)
-		http.Redirect(w, r, r.RequestURI, 303)
+		s.party.EncounterCreatures = append(s.party.EncounterCreatures, newCreature)
 	} else {
 		creatureToDamage, err := strconv.Atoi(arg)
 		if err != nil {
@@ -92,7 +89,7 @@ func (encounterServer *EncounterServer) HandlePost(w http.ResponseWriter, r *htt
 			http.Redirect(w, r, redirectURL, 303)
 			return
 		}
-		if creatureToDamage >= len(creatures) {
+		if creatureToDamage >= len(s.party.EncounterCreatures) {
 			log.Printf("Invalid creature (out of range) - %v", creatureToDamage)
 			http.Redirect(w, r, redirectURL, 303)
 			return
@@ -101,7 +98,8 @@ func (encounterServer *EncounterServer) HandlePost(w http.ResponseWriter, r *htt
 		if err != nil {
 			log.Printf("Couldn't parse damage amount - %v", err)
 		}
-		creatures[creatureToDamage].DamageTaken += damageAmount
-		http.Redirect(w, r, redirectURL, 303)
+		s.party.EncounterCreatures[creatureToDamage].DamageTaken += damageAmount
 	}
+	s.party.Save()
+	http.Redirect(w, r, redirectURL, 303)
 }

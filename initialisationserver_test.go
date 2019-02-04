@@ -1,7 +1,6 @@
 package main
 
 import (
-	"dnd/creature"
 	"encoding/gob"
 	"io/ioutil"
 	"os"
@@ -18,7 +17,10 @@ func TestGob(t *testing.T) {
 
 	f, err = os.Create(fn)
 	e := gob.NewEncoder(f)
-	err = e.Encode(Party{"colin", "is", make([]creature.Creature, 0)})
+	var encodeParty Party
+	encodeParty.Filename = "colin"
+	encodeParty.Name = "is"
+	err = e.Encode(encodeParty)
 	if err != nil {
 		t.Fatalf("Error encoding party - %v", err)
 	}

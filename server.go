@@ -62,11 +62,11 @@ func main() {
 		log.Fatalf("Catacylsmic error initialising - %v", err)
 	}
 
+	logicServer := http.NewServeMux()
 	server := http.NewServeMux()
 	server.HandleFunc("/favicon.ico", http.NotFound)
 	server.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 	server.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		logicServer := http.NewServeMux()
 		if initialisationHandler.InitialisationComplete {
 			logicServer.ServeHTTP(w, r)
 		} else {

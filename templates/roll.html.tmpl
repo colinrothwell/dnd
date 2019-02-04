@@ -1,13 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Dice Roll!</title>
-    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans" rel="stylesheet">
-    <link rel="stylesheet" href="/static/reset.css" />
-    <link rel="stylesheet" href="/static/style-all.css" />
-    <link rel="stylesheet" href="/static/style-roll.css" />
-    <script type="text/javascript">
+{{define "HeadContent"}}
+<link rel="stylesheet" href="/static/style-roll.css" />
+<script type="text/javascript">
     function clearCustomRollDefault() {
         if (document.customRollForm.roll.value == "Custom Roll") {
             document.customRollForm.roll.value = "";
@@ -28,9 +21,9 @@
         clearCustomRollDefault();
     }
     document.addEventListener("DOMContentLoaded", setup, false);
-    </script>
-</head>
-<body>
+</script>
+{{end}}
+{{define "BodyContent" }}
 <div class="content">
     <ul class="roll-buttons">
         <form action="/roll" method="post">
@@ -56,5 +49,4 @@
     {{end}}
     </ul>
 </div>
-</body>
-</html>
+{{end}}

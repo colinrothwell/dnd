@@ -50,14 +50,26 @@ type DndServer struct {
 	StaticServer    http.Handler
 }
 
+func loadTemplate(name string) *template.Template {
+	// This rigamorale implements template inheritance. frame is the template we want to execute
+	// but with different templates defined from HeadContent and BodyContent.
+	t := template.New("frame.html.tmpl")
+	// This is clumsy, but is to set empty default implementations
+	t, err := t.Parse(`{{define "HeadContent"}}{{end}}{{define "BodyContent"}}{{end}}`)
+	if err != nil {
+		log.Fatalf("Error loading template '%s' - %v", name, err)
+	}
+	t, err = t.ParseFiles("templates/frame.html.tmpl", "templates/"+name+".tmpl")
+	if err != nil {
+		log.Fatalf("Error loading template '%s' - %v", name, err)
+	}
+	return t
+}
+
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
-	theTemplate, err := template.ParseGlob("templates/*")
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	initialisationHandler, err := newInitialisationServer(getDataDir(), theTemplate.Lookup("choosegroup.html.tmpl"))
+	initialisationHandler, err := newInitialisationServer(getDataDir(), loadTemplate("choosegroup.html"))
 	if err != nil {
 		log.Fatalf("Catacylsmic error initialising - %v", err)
 	}
@@ -73,13 +85,13 @@ func main() {
 			StandardGetPostHandler(initialisationHandler).ServeHTTP(w, r)
 			if initialisationHandler.InitialisationComplete {
 				diceServer := DiceServer{
-					theTemplate.Lookup("roll.html.tmpl"),
+					loadTemplate("roll.html"),
 					initialisationHandler.Party}
 				encounterServer := EncounterServer{
-					theTemplate.Lookup("encounter.html.tmpl"),
+					loadTemplate("encounter.html"),
 					initialisationHandler.Party}
 				logicServer.Handle("/encounter/", StandardGetPostHandler(&encounterServer))
-				logicServer.Handle("/", StandardGetPostHandler(&diceServer))
+				logicServer.Handle("/roll/", StandardGetPostHandler(&diceServer))
 			}
 		}
 	})

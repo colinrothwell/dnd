@@ -1,25 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>D&D Encounter</title>
-    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans" rel="stylesheet">
-    <link rel="stylesheet" href="/static/reset.css" />
-    <link rel="stylesheet" href="/static/style-all.css" />
-</head>
-<body>
-    <div class="content">
-        <h1>Choose Party</h1>
-        <ul>
-            {{range .}}
-                <li><form method="post" action="{{.URL}}">
-                    <input type="submit" value="{{.Name}}" />
-                </li></form>
-            {{end}}
-        </ul>
-        <form method="post">
-            <input type="text" id="partyName" name="partyName" />
-            <input type="submit" value="New Party" />
-        </form>
-    </div>
-</body>
+{{define "BodyContent"}}
+<h1>Choose Party</h1>
+<ul>
+    {{range .}}
+        <li><form method="post" action="{{.URL}}">
+            <input type="submit" value="{{.Name}}" />
+        </li></form>
+    {{end}}
+</ul>
+<form method="post">
+    <input type="text" id="partyName" name="partyName" />
+    <input type="submit" value="New Party" />
+</form>
+{{end}}

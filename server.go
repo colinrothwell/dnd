@@ -58,7 +58,6 @@ func StandardTemplatedGetPostHandler(t TemplatedGetPostHandler) http.Handler {
 			t.HandlePost(w, r)
 		} else {
 			data := t.GenerateTemplateData(r)
-			log.Println("Executing template with data...")
 			err := t.GetTemplate().Execute(w, data)
 			if err != nil {
 				log.Print(err)

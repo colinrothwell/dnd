@@ -1,0 +1,13 @@
+{{define "HeadContent" }}
+{{ template "RollHeadContent" .DiceData }}
+{{end}}
+
+{{define "BodyContent"}}
+<div style="width: 70%">
+{{template "EncounterBodyContent" .EncounterData}}
+</div>
+
+<div style="width: 30%">
+{{ template "RollBodyContent" .DiceData }}
+</div>
+{{end}}

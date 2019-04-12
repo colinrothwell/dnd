@@ -118,5 +118,5 @@ func (s *initialisationServer) HandlePost(w http.ResponseWriter, r *http.Request
 		log.Printf("Using existing party '%s'", s.Party.Name)
 	}
 	s.InitialisationComplete = true
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/roll", 303)
 }

@@ -25,7 +25,11 @@ type EncounterServer struct {
 	party    *Party
 }
 
-func (s *EncounterServer) HandleGet(w http.ResponseWriter, r *http.Request) {
+func (s *EncounterServer) GetTemplate() *template.Template {
+	return s.template
+}
+
+func (s *EncounterServer) GenerateTemplateData(r *http.Request) interface{} {
 	creatureCount := len(s.party.EncounterCreatures)
 	creatureInformations := make([]CreatureInformation, creatureCount)
 	for i, creature := range s.party.EncounterCreatures {
@@ -61,10 +65,7 @@ func (s *EncounterServer) HandleGet(w http.ResponseWriter, r *http.Request) {
 		data.NextCreatureTypeName = nextCreatureType.Name
 		data.NextCreatureHitDice = nextCreatureType.HitDice.String()
 	}
-	err := s.template.Execute(w, data)
-	if err != nil {
-		log.Print(err)
-	}
+	return data
 }
 
 func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {

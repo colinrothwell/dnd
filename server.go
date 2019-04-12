@@ -44,6 +44,28 @@ func StandardGetPostHandler(h GetPostHandler) http.Handler {
 	})
 }
 
+// A TemplatedGetPostHandler renders get requests using a template
+type TemplatedGetPostHandler interface {
+	GetTemplate() *template.Template
+	GenerateTemplateData(r *http.Request) interface{}
+	HandlePost(w http.ResponseWriter, r *http.Request)
+}
+
+// StandardTemplatedGetPostHandler converts a TemplatedGetPostHandler to an http.Handler
+func StandardTemplatedGetPostHandler(t TemplatedGetPostHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			t.HandlePost(w, r)
+		} else {
+			data := t.GenerateTemplateData(r)
+			err := t.GetTemplate().Execute(w, data)
+			if err != nil {
+				log.Print(err)
+			}
+		}
+	})
+}
+
 type DndServer struct {
 	DiceServer      DiceServer
 	EncounterServer EncounterServer
@@ -90,8 +112,8 @@ func main() {
 				encounterServer := EncounterServer{
 					loadTemplate("encounter.html"),
 					initialisationHandler.Party}
-				logicServer.Handle("/encounter/", StandardGetPostHandler(&encounterServer))
-				logicServer.Handle("/roll/", StandardGetPostHandler(&diceServer))
+				logicServer.Handle("/encounter", StandardTemplatedGetPostHandler(&encounterServer))
+				logicServer.Handle("/roll", StandardTemplatedGetPostHandler(&diceServer))
 			}
 		}
 	})

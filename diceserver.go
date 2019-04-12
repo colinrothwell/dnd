@@ -19,7 +19,11 @@ type RollTemplateValues struct {
 	LastCustomRoll *string
 }
 
-func (diceServer *DiceServer) HandleGet(w http.ResponseWriter, r *http.Request) {
+func (diceServer *DiceServer) GetTemplate() *template.Template {
+	return diceServer.Template
+}
+
+func (diceServer *DiceServer) GenerateTemplateData(r *http.Request) interface{} {
 	var templateValues RollTemplateValues
 	templateValues.LastCustomRoll = &diceServer.Party.LastCustomRoll
 	if len(diceServer.Party.PreviousRolls) > 0 {
@@ -29,10 +33,7 @@ func (diceServer *DiceServer) HandleGet(w http.ResponseWriter, r *http.Request) 
 		templateValues.OlderRolls = dice.ReverseRollResultSlice(
 			diceServer.Party.PreviousRolls[:penultimateIndex])
 	}
-	err := diceServer.Template.Execute(w, templateValues)
-	if err != nil {
-		log.Print(err)
-	}
+	return templateValues
 }
 
 func (diceServer *DiceServer) HandlePost(w http.ResponseWriter, r *http.Request) {
@@ -47,5 +48,5 @@ func (diceServer *DiceServer) HandlePost(w http.ResponseWriter, r *http.Request)
 		log.Println(err)
 	}
 	diceServer.Party.Save()
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/roll", 303)
 }

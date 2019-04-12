@@ -58,18 +58,13 @@ func StandardTemplatedGetPostHandler(t TemplatedGetPostHandler) http.Handler {
 			t.HandlePost(w, r)
 		} else {
 			data := t.GenerateTemplateData(r)
+			log.Println("Executing template with data...")
 			err := t.GetTemplate().Execute(w, data)
 			if err != nil {
 				log.Print(err)
 			}
 		}
 	})
-}
-
-type DndServer struct {
-	DiceServer      DiceServer
-	EncounterServer EncounterServer
-	StaticServer    http.Handler
 }
 
 func loadTemplate(name string) *template.Template {
@@ -96,6 +91,10 @@ func main() {
 		log.Fatalf("Catacylsmic error initialising - %v", err)
 	}
 
+	diceTemplate := loadTemplate("roll.html")
+	encounterTemplate := loadTemplate("encounter.html")
+	overviewTemplate := loadTemplate("overview.html")
+
 	logicServer := http.NewServeMux()
 	server := http.NewServeMux()
 	server.HandleFunc("/favicon.ico", http.NotFound)
@@ -106,14 +105,12 @@ func main() {
 		} else {
 			StandardGetPostHandler(initialisationHandler).ServeHTTP(w, r)
 			if initialisationHandler.InitialisationComplete {
-				diceServer := DiceServer{
-					loadTemplate("roll.html"),
-					initialisationHandler.Party}
-				encounterServer := EncounterServer{
-					loadTemplate("encounter.html"),
-					initialisationHandler.Party}
+				diceServer := DiceServer{diceTemplate, initialisationHandler.Party}
+				encounterServer := EncounterServer{encounterTemplate, initialisationHandler.Party}
+				overviewServer := CreateOverviewServer(overviewTemplate, &encounterServer, &diceServer)
 				logicServer.Handle("/encounter", StandardTemplatedGetPostHandler(&encounterServer))
 				logicServer.Handle("/roll", StandardTemplatedGetPostHandler(&diceServer))
+				logicServer.Handle("/", StandardTemplatedGetPostHandler(overviewServer))
 			}
 		}
 	})

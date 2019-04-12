@@ -69,8 +69,13 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request) interface{} {
 }
 
 func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
 	redirectURL, arg := getURLFunctionAndArgument(r.URL)
+	err := r.ParseForm()
+	if err != nil {
+		log.Printf("Error parsing form - %v", err)
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+		return
+	}
 	if arg == "" {
 		roll, err := dice.ParseRollString(r.Form["creatureHitDice"][0])
 		if err != nil {
@@ -101,6 +106,9 @@ func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
 		}
 		s.party.EncounterCreatures[creatureToDamage].DamageTaken += damageAmount
 	}
-	s.party.Save()
+	err = s.party.Save()
+	if err != nil {
+		log.Printf("Error saving party - %v", err)
+	}
 	http.Redirect(w, r, redirectURL, 303)
 }

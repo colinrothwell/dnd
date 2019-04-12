@@ -44,6 +44,5 @@ func (p *Party) Save() error {
 		}
 	}()
 	encoder := gob.NewEncoder(file)
-	err = encoder.Encode(p)
-	return nil
+	return encoder.Encode(p)
 }

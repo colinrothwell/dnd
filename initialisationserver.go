@@ -34,7 +34,10 @@ func getDataDir() string {
 	dataDir := filepath.Join(usr.HomeDir, "encounters")
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		log.Printf("encounters directory '%s' does not exist, creating...", dataDir)
-		os.Mkdir(dataDir, 0755)
+		err = os.Mkdir(dataDir, 0750)
+		if err != nil {
+			log.Printf("Oh no, I don't believe it! Error creating directory - %v", err)
+		}
 	}
 	return dataDir
 }
@@ -43,7 +46,7 @@ func newInitialisationServer(dataDir string, t *template.Template) (*initialisat
 	s := initialisationServer{dataDir, t, make([]Party, 0), false, nil}
 	contents, err := ioutil.ReadDir(s.dataDir)
 	if err != nil {
-		return nil, fmt.Errorf("Error when reading data directory - %v", err)
+		return nil, fmt.Errorf("error when reading data directory - %v", err)
 	}
 	i := 0
 	for _, fileInfo := range contents {
@@ -93,7 +96,11 @@ func (s *initialisationServer) initialiseWithNewParty(name string) error {
 }
 
 func (s *initialisationServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		log.Printf("Error parsing form - %v", err)
+		http.Redirect(w, r, "/", 303)
+	}
 	_, argument := getURLFunctionAndArgument(r.URL)
 	if argument == "" {
 		err := s.initialiseWithNewParty(r.Form["partyName"][0])
@@ -118,5 +125,5 @@ func (s *initialisationServer) HandlePost(w http.ResponseWriter, r *http.Request
 		log.Printf("Using existing party '%s'", s.Party.Name)
 	}
 	s.InitialisationComplete = true
-	http.Redirect(w, r, "/roll", 303)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -37,7 +37,11 @@ func (diceServer *DiceServer) GenerateTemplateData(r *http.Request) interface{} 
 }
 
 func (diceServer *DiceServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		log.Printf("Error parsing form - %v", err)
+		http.Redirect(w, r, "/roll", http.StatusSeeOther)
+	}
 	roll, err := dice.ParseRollString(r.Form["roll"][0])
 	if len(r.Form["roll-custom"]) > 0 {
 		diceServer.Party.LastCustomRoll = r.Form["roll"][0]
@@ -47,6 +51,9 @@ func (diceServer *DiceServer) HandlePost(w http.ResponseWriter, r *http.Request)
 	} else {
 		log.Println(err)
 	}
-	diceServer.Party.Save()
+	err = diceServer.Party.Save()
+	if err != nil {
+		log.Printf("Error saving party - %v", err)
+	}
 	http.Redirect(w, r, "/roll", 303)
 }

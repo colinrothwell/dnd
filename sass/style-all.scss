@@ -1,29 +1,27 @@
 $text-color: #446575;
 
 $background: #d8ebf4;
-$paler-background: #f2fbff;
+$element-background: #f2fbff;
+$input-background: #fff;
 
 $accent1: #66aacc;
 $accent2: #77bbdd;
 $accent3: #456875;
 
-$column-spacing: 0.3rem;
+$column-spacing: 0;
 $roll-width: 20rem;
 
-$structural-border: $text-color solid $column-spacing;
-
 html {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    min-width: 55rem;
-    
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-width: 55rem;
+
   font-size: 12pt;
   line-height: 1.5;
   text-align: center;
-  border: $structural-border;
 }
 
 body {
@@ -41,13 +39,13 @@ input {
   padding: 0.25rem;
   margin: 0;
   border: none;
-  background: $accent1;
+  background: $input-background;
   color: #fff;
   width: 100%;
 }
 
 input[type="text"] {
-  background: #f2fbff;
+  background: $input-background;
   color: $accent1;
   padding: 0.25rem 0;
 }
@@ -55,6 +53,10 @@ input[type="text"] {
 input[type="text"].default {
   color: $accent2;
   font-style: italic;
+}
+
+input[type="submit"] {
+  background: $accent1;
 }
 
 input[type="submit"]:hover {
@@ -110,7 +112,7 @@ th {
 }
 
 td {
-  $border-style: $background 0.1rem solid;
+  $border-style: $element-background 0.1rem solid;
   border-top: $border-style;
   border-bottom: $border-style;
 }
@@ -132,26 +134,28 @@ td.dead {
 
 div#encounter {
   min-height: 100%;
-  margin-right: $roll-width + $column-spacing;
+  margin-right: $roll-width + 1rem;
+  padding: 1rem;
 
   table {
-      width: 100%;
+    width: 100%;
+    background: $element-background;
   }
 
   input[type="text"]#damageAmount {
-      width: 3.5rem;
+    width: 3.5rem;
   }
 }
 
 div#roll {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 1rem;
+  bottom: 1rem;
   width: $roll-width;
-  right: 0;
+  right: 1rem;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-left: $structural-border;
+  background: $element-background;
 
   ul.roll-buttons {
     list-style-type: none;
@@ -175,7 +179,7 @@ div#roll {
   ul.previous-rolls {
     text-align: center;
     margin: 0 auto;
-    padding: 0;
+    padding: 1rem;
     list-style-type: none;
   }
 

@@ -1,0 +1,177 @@
+$text-color: #446575;
+
+$background: #d8ebf4;
+$paler-background: #f2fbff;
+
+$accent1: #66aacc;
+
+$column-spacing: 1rem;
+$roll-width: 20rem;
+
+html {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    
+  font-size: 12pt;
+  line-height: 1.5;
+  text-align: center;
+}
+
+body {
+  font-family: "Nunito Sans", sans-serif;
+  position: relative;
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+  background: $background;
+  color: $text-color;
+}
+
+input {
+  text-align: center;
+  padding: 0.5em;
+  margin: 0;
+  border: none;
+  background: $accent1;
+  color: #fff;
+  width: 100%;
+}
+
+input[type="text"] {
+  background: #f2fbff;
+  color: $accent1;
+  padding: 0.5em 0;
+}
+
+input[type="text"].default {
+  color: #77bbdd;
+  font-style: italic;
+}
+
+input[type="submit"]:hover {
+  background: #77bbdd;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  clear: both;
+  font-weight: bold;
+}
+
+h2,
+h3 {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+h2 {
+  font-size: 1.5rem;
+  padding: 1rem 0 0 0;
+}
+
+h3 {
+  clear: both;
+  font-size: 1.25rem;
+  padding: 1.5rem 0 1.25rem 0;
+}
+
+h4 {
+  text-align: center;
+  padding: 0 0 0 0;
+}
+
+td {
+  padding: 0.1rem;
+}
+
+td.damaged {
+  color: #fff;
+  background: #e5d69a;
+}
+
+td.dead {
+  color: #fff;
+  background: #e59a9a;
+}
+
+div#encounter {
+  min-height: 100%;
+  margin-right: $roll-width + $column-spacing + 2rem;
+
+  table {
+      width: 100%;
+  }
+  
+  input[type="text"]#damageAmount {
+      width: 3.5rem;
+  }
+}
+
+div#roll {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: $roll-width;
+  right: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 1rem;
+  border-left: 1rem $paler-background solid;
+
+  ul.roll-buttons {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  ul.roll-buttons:after {
+    clear: both;
+  }
+
+  ul.roll-buttons input[type="submit"] {
+    display: block;
+    float: left;
+    text-align: center;
+    width: $roll-width / 3;
+    padding: 1em 0;
+    margin: 0;
+    border: none;
+  }
+
+  ul.previous-rolls {
+    text-align: center;
+    margin: 0 auto;
+    padding: 0;
+    list-style-type: none;
+  }
+
+  input[type="text"] {
+    width: 18em;
+    margin: 1rem auto;
+  }
+
+  input#roll {
+    margin: 1rem 0.5rem;
+  }
+
+  input[type="submit"] {
+    width: 8em;
+    margin: 1rem 0.5rem;
+  }
+}

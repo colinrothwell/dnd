@@ -1,5 +1,4 @@
 {{define "HeadContent"}}
-<link rel="stylesheet" href="/static/style-roll.css" />
 <script type="text/javascript">
     function clearCustomRollDefault() {
         if (document.customRollForm.roll.value == "Custom Roll") {
@@ -24,29 +23,27 @@
 </script>
 {{end}}
 {{define "BodyContent" }}
-<div class="content">
-    <ul class="roll-buttons">
-        <form action="/roll" method="post">
-        <li><input id="submit-d4" type="submit" name="roll" value="d4"></li>
-        <li><input id="submit-d6" type="submit" name="roll" value="d6"></li>
-        <li><input id="submit-d8" type="submit" name="roll" value="d8"></li>
-        <li><input id="submit-d10" type="submit" name="roll" value="d10"></li>
-        <li><input id="submit-d12" type="submit" name="roll" value="d12"></li>
-        <li><input id="submit-d20" type="submit" name="roll" value="d20"></li>
-        </form>
-    </ul>
-    <form name="customRollForm" action="/roll" method="post">
-        <input id="roll" type="text" name="roll" value="{{ .LastCustomRoll }}" class="default">
-        <input id="submit-custom" type="submit" name="roll-custom" value="Roll!">
+<ul class="roll-buttons">
+    <form action="/roll" method="post">
+    <li><input id="submit-d4" type="submit" name="roll" value="d4"></li>
+    <li><input id="submit-d6" type="submit" name="roll" value="d6"></li>
+    <li><input id="submit-d8" type="submit" name="roll" value="d8"></li>
+    <li><input id="submit-d10" type="submit" name="roll" value="d10"></li>
+    <li><input id="submit-d12" type="submit" name="roll" value="d12"></li>
+    <li><input id="submit-d20" type="submit" name="roll" value="d20"></li>
     </form>
-    {{if .HasResult }}
-        <h4>{{ .LastRoll.Roll }} = {{ .LastRoll.StringIndividualRolls }} =</h4>
-        <h1>{{ .LastRoll.Sum }}</h1>
-    {{end}}
-    <ul class="previous-rolls">
-    {{range .OlderRolls}}
-        <li>{{ .Roll }} = {{ .StringIndividualRolls }} = {{ .Sum }}</li>
-    {{end}}
-    </ul>
-</div>
+</ul>
+<form name="customRollForm" action="/roll" method="post">
+    <input id="roll" type="text" name="roll" value="{{ .LastCustomRoll }}" class="default">
+    <input id="submit-custom" type="submit" name="roll-custom" value="Roll!">
+</form>
+{{if .HasResult }}
+    <h4>{{ .LastRoll.Roll }} = {{ .LastRoll.StringIndividualRolls }} =</h4>
+    <h1>{{ .LastRoll.Sum }}</h1>
+{{end}}
+<ul class="previous-rolls">
+{{range .OlderRolls}}
+    <li>{{ .Roll }} = {{ .StringIndividualRolls }} = {{ .Sum }}</li>
+{{end}}
+</ul>
 {{end}}

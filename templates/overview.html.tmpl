@@ -3,11 +3,11 @@
 {{end}}
 
 {{define "BodyContent"}}
-<div style="width: 70%">
+<div id="encounter">
 {{template "EncounterBodyContent" .EncounterData}}
 </div>
 
-<div style="width: 30%">
+<div id="roll">
 {{ template "RollBodyContent" .DiceData }}
 </div>
 {{end}}

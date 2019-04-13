@@ -4,9 +4,13 @@ $background: #d8ebf4;
 $paler-background: #f2fbff;
 
 $accent1: #66aacc;
+$accent2: #77bbdd;
+$accent3: #456875;
 
-$column-spacing: 1rem;
+$column-spacing: 0.3rem;
 $roll-width: 20rem;
+
+$structural-border: $text-color solid $column-spacing;
 
 html {
     position: absolute;
@@ -14,10 +18,12 @@ html {
     right: 0;
     bottom: 0;
     left: 0;
+    min-width: 55rem;
     
   font-size: 12pt;
   line-height: 1.5;
   text-align: center;
+  border: $structural-border;
 }
 
 body {
@@ -32,7 +38,7 @@ body {
 
 input {
   text-align: center;
-  padding: 0.5em;
+  padding: 0.25rem;
   margin: 0;
   border: none;
   background: $accent1;
@@ -43,16 +49,16 @@ input {
 input[type="text"] {
   background: #f2fbff;
   color: $accent1;
-  padding: 0.5em 0;
+  padding: 0.25rem 0;
 }
 
 input[type="text"].default {
-  color: #77bbdd;
+  color: $accent2;
   font-style: italic;
 }
 
 input[type="submit"]:hover {
-  background: #77bbdd;
+  background: $accent2;
   cursor: pointer;
 }
 
@@ -96,8 +102,22 @@ h4 {
   padding: 0 0 0 0;
 }
 
+th {
+  font-weight: bold;
+  background: $accent1;
+  color: #fff;
+  padding: 0.5rem;
+}
+
 td {
-  padding: 0.1rem;
+  $border-style: $background 0.1rem solid;
+  border-top: $border-style;
+  border-bottom: $border-style;
+}
+
+td.input {
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
 }
 
 td.damaged {
@@ -112,12 +132,12 @@ td.dead {
 
 div#encounter {
   min-height: 100%;
-  margin-right: $roll-width + $column-spacing + 2rem;
+  margin-right: $roll-width + $column-spacing;
 
   table {
       width: 100%;
   }
-  
+
   input[type="text"]#damageAmount {
       width: 3.5rem;
   }
@@ -131,13 +151,11 @@ div#roll {
   right: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-left: 1rem;
-  border-left: 1rem $paler-background solid;
+  border-left: $structural-border;
 
   ul.roll-buttons {
     list-style-type: none;
     margin: 0;
-    padding: 0;
   }
 
   ul.roll-buttons:after {
@@ -161,17 +179,7 @@ div#roll {
     list-style-type: none;
   }
 
-  input[type="text"] {
-    width: 18em;
-    margin: 1rem auto;
-  }
-
-  input#roll {
-    margin: 1rem 0.5rem;
-  }
-
-  input[type="submit"] {
-    width: 8em;
-    margin: 1rem 0.5rem;
+  input#submit-custom {
+    margin: 0 0 $column-spacing 0;
   }
 }

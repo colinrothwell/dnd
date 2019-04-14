@@ -7,11 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetURLFunctionAndArgument(t *testing.T) {
-	f, arg := getURLFunctionAndArgument(&url.URL{Path: "/foo/"})
-	assert.Equal(t, "/foo", f)
+func TestGetURLFunction(t *testing.T) {
+	arg, _ := getURLArgument(&url.URL{Path: "/foo/"})
 	assert.Equal(t, "", arg)
-	f, arg = getURLFunctionAndArgument(&url.URL{Path: "/bar/foo"})
-	assert.Equal(t, "/bar", f)
+	arg, _ = getURLArgument(&url.URL{Path: "/bar/foo"})
 	assert.Equal(t, "foo", arg)
 }

@@ -54,7 +54,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request) interface{} {
 			creature.RolledHealth,
 			creature.Type.HitDice.Max(),
 			creature.DamageTaken,
-			r.RequestURI + strconv.Itoa(i),
+			"/encounter/" + strconv.Itoa(i),
 			minHC,
 			rolledHC,
 			maxHC}
@@ -69,18 +69,23 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request) interface{} {
 }
 
 func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	redirectURL, arg := getURLFunctionAndArgument(r.URL)
-	err := r.ParseForm()
+	log.Printf("Handling encounter post")
+	arg, err := getURLArgument(r.URL)
+	if err != nil {
+		log.Printf("Error getting URL argument - %v", err)
+		return
+	}
+	redirectURI, err := ParseFormAndGetRedirectURI(r)
 	if err != nil {
 		log.Printf("Error parsing form - %v", err)
-		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+		http.Redirect(w, r, redirectURI, http.StatusSeeOther)
 		return
 	}
 	if arg == "" {
 		roll, err := dice.ParseRollString(r.Form["creatureHitDice"][0])
 		if err != nil {
 			log.Printf("Error parsing creature dice string - %v", err)
-			http.Redirect(w, r, r.RequestURI, 303)
+			http.Redirect(w, r, redirectURI, 303)
 			return
 		}
 		newCreature := *creature.Create(
@@ -92,12 +97,12 @@ func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
 		creatureToDamage, err := strconv.Atoi(arg)
 		if err != nil {
 			log.Printf("Error parsing int from %v - %v", arg, err)
-			http.Redirect(w, r, redirectURL, 303)
+			http.Redirect(w, r, redirectURI, 303)
 			return
 		}
 		if creatureToDamage >= len(s.party.EncounterCreatures) {
 			log.Printf("Invalid creature (out of range) - %v", creatureToDamage)
-			http.Redirect(w, r, redirectURL, 303)
+			http.Redirect(w, r, redirectURI, 303)
 			return
 		}
 		damageAmount, err := strconv.Atoi(r.Form["damageAmount"][0])
@@ -110,5 +115,5 @@ func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error saving party - %v", err)
 	}
-	http.Redirect(w, r, redirectURL, 303)
+	http.Redirect(w, r, redirectURI, 303)
 }

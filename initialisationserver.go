@@ -71,18 +71,18 @@ func newInitialisationServer(dataDir string, t *template.Template) (*initialisat
 	return &s, nil
 }
 
-// Returns true if initialisation is complete
-func (s *initialisationServer) HandleGet(w http.ResponseWriter, r *http.Request) {
+func (s *initialisationServer) GetTemplate() *template.Template {
+	return s.template
+}
+
+func (s *initialisationServer) GenerateTemplateData(r *http.Request) interface{} {
 	partyInitialisationData := make([]PartyInitialisationData, len(s.parties))
 	for i, p := range s.parties {
 		partyInitialisationData[i] = PartyInitialisationData{
 			p.Name,
 			fmt.Sprintf("/%d", i)}
 	}
-	err := s.template.Execute(w, partyInitialisationData)
-	if err != nil {
-		log.Fatalf("Error rendering initialisation template - %v", err)
-	}
+	return partyInitialisationData
 }
 
 func (s *initialisationServer) initialiseWithNewParty(name string) error {
@@ -96,34 +96,40 @@ func (s *initialisationServer) initialiseWithNewParty(name string) error {
 }
 
 func (s *initialisationServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+	redirectURI, err := ParseFormAndGetRedirectURI(r)
 	if err != nil {
 		log.Printf("Error parsing form - %v", err)
-		http.Redirect(w, r, "/", 303)
+		http.Redirect(w, r, redirectURI, 303)
+		return
 	}
-	_, argument := getURLFunctionAndArgument(r.URL)
+	argument, err := getURLArgument(r.URL)
+	if err != nil {
+		log.Printf("Error getting argument - %v", err)
+		http.Redirect(w, r, redirectURI, http.StatusSeeOther)
+		return
+	}
 	if argument == "" {
 		err := s.initialiseWithNewParty(r.Form["partyName"][0])
 		if err != nil {
 			log.Printf("Error creating file for party - %v", err)
-			http.Redirect(w, r, "/", 303)
+			http.Redirect(w, r, redirectURI, 303)
 			return
 		}
 	} else {
 		i, err := strconv.Atoi(argument)
 		if err != nil {
 			log.Printf("Error parsing party index - %v", err)
-			http.Redirect(w, r, "/", 303)
+			http.Redirect(w, r, redirectURI, 303)
 			return
 		}
 		if i < 0 || i >= len(s.parties) {
 			log.Printf("Party index %d out of range", i)
-			http.Redirect(w, r, "/", 303)
+			http.Redirect(w, r, redirectURI, 303)
 			return
 		}
 		s.Party = &s.parties[i]
 		log.Printf("Using existing party '%s'", s.Party.Name)
 	}
 	s.InitialisationComplete = true
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, redirectURI, http.StatusSeeOther)
 }

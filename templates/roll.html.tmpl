@@ -24,7 +24,8 @@
 {{end}}
 {{define "BodyContent" }}
 <ul class="roll-buttons">
-    <form action="/roll" method="post">
+    <form action="/roll/" method="post">
+    {{redirectURIInput}}
     <li><input id="submit-d4" type="submit" name="roll" value="d4"></li>
     <li><input id="submit-d6" type="submit" name="roll" value="d6"></li>
     <li><input id="submit-d8" type="submit" name="roll" value="d8"></li>
@@ -33,7 +34,8 @@
     <li><input id="submit-d20" type="submit" name="roll" value="d20"></li>
     </form>
 </ul>
-<form name="customRollForm" action="/roll" method="post">
+<form name="customRollForm" action="/roll/" method="post">
+    {{redirectURIInput}}
     <input id="roll" type="text" name="roll" value="{{ .LastCustomRoll }}" class="default">
     <input id="submit-custom" type="submit" name="roll-custom" value="Roll!">
 </form>

@@ -3,11 +3,13 @@
 <ul>
     {{range .}}
         <li><form method="post" action="{{.URL}}">
+            {{redirectURIInput}}
             <input type="submit" value="{{.Name}}" />
         </li></form>
     {{end}}
 </ul>
 <form method="post">
+    {{redirectURIInput}}
     <input type="text" id="partyName" name="partyName" />
     <input type="submit" value="New Party" />
 </form>

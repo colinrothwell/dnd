@@ -3,10 +3,7 @@
     <tr>
         <th>Type</th>
         <th>Name</th>
-        <th>Min</th>
-        <th>Rolled</th>
-        <th>Max</th>
-        <th>Damage Taken</th>
+        <th>HP</th>
         <th />
         <th />
     </tr>
@@ -15,20 +12,15 @@
             {{redirectURIInput}}
             <td class="input"><input type="text" id="creatureType" name="creatureType" value="{{.NextCreatureTypeName}}" /></td>
             <td class="input"><input type="text" id="creatureName" name="creatureName" /></td>
-            <td class="input" colspan="3"><input type="text" id="creatureHitDice" name="creatureHitDice" value="{{.NextCreatureHitDice}}" /></td>
-            <td class="input"><input type="submit" value="Add" /></td>
-            <td />
-            <td />
+            <td class="input"><input type="text" id="creatureHitDice" name="creatureHitDice" value="{{.NextCreatureHitDice}}" /></td>
+            <td class="input" colspan="2"><input type="submit" value="Add" /></td>
         </form>
     </tr>
     {{range .CreatureInformation}}
     <tr>
         <td>{{.Type}}</td>
         <td>{{.Name}}</td>
-        <td class="{{.MinHealthClass}}">{{.MinHealth}}</td>
-        <td class="{{.RolledHealthClass}}">{{.RolledHealth}}</td>
-        <td class="{{.MaxHealthClass}}">{{.MaxHealth}}</td>
-        <td>{{.DamageTaken}}</td>
+        <td class="{{.CurrentHealthClass}}">{{.CurrentHealth}}</td>
         <form method="post" action="{{.DamageURL}}">
             {{redirectURIInput}}
             <td><input type="text" id="damageAmount" name="damageAmount" value="" /></td>

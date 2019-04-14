@@ -10,9 +10,9 @@ import (
 )
 
 type CreatureInformation struct {
-	Type, Name                                                   string
-	MinHealth, RolledHealth, MaxHealth, DamageTaken              int
-	DamageURL, MinHealthClass, RolledHealthClass, MaxHealthClass string
+	Type, Name, DamageURL string
+	CurrentHealth         int
+	CurrentHealthClass    string
 }
 
 type EncounterData struct {
@@ -33,31 +33,20 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request) interface{} {
 	creatureCount := len(s.party.EncounterCreatures)
 	creatureInformations := make([]CreatureInformation, creatureCount)
 	for i, creature := range s.party.EncounterCreatures {
-		var minHC, rolledHC, maxHC string
+		var hc string
 		if 2*creature.DamageTaken >= creature.RolledHealth {
-			rolledHC = "damaged"
+			hc = "damaged"
 		}
-		if creature.DamageTaken >= creature.Type.HitDice.Min() {
-			minHC = "dead"
-			if creature.DamageTaken >= creature.RolledHealth {
-				rolledHC = "dead"
-				if creature.DamageTaken >= creature.Type.HitDice.Max() {
-					maxHC = "dead"
-				}
-			}
+		if creature.DamageTaken >= creature.RolledHealth {
+			hc = "dead"
 		}
 		creatureInformationIndex := creatureCount - 1 - i
 		creatureInformations[creatureInformationIndex] = CreatureInformation{
 			creature.Type.Name,
 			creature.Name,
-			creature.Type.HitDice.Min(),
-			creature.RolledHealth,
-			creature.Type.HitDice.Max(),
-			creature.DamageTaken,
 			"/encounter/" + strconv.Itoa(i),
-			minHC,
-			rolledHC,
-			maxHC}
+			creature.RolledHealth - creature.DamageTaken,
+			hc}
 	}
 	data := EncounterData{creatureInformations, "", ""}
 	if creatureCount > 0 {
@@ -69,7 +58,6 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request) interface{} {
 }
 
 func (s *EncounterServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Handling encounter post")
 	arg, err := getURLArgument(r.URL)
 	if err != nil {
 		log.Printf("Error getting URL argument - %v", err)

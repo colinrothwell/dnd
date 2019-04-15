@@ -6,14 +6,15 @@
         <th>HP</th>
         <th />
         <th />
+        <th />
     </tr>
     <tr>
-        <form method="post" action="/encounter/">
+        <form method="post" action="/encounter/new-creature">
             {{redirectURIInput}}
             <td class="input"><input type="text" id="creatureType" name="creatureType" value="{{.NextCreatureTypeName}}" /></td>
             <td class="input"><input type="text" id="creatureName" name="creatureName" /></td>
             <td class="input"><input type="text" id="creatureHitDice" name="creatureHitDice" value="{{.NextCreatureHitDice}}" /></td>
-            <td class="input" colspan="2"><input type="submit" value="Add" /></td>
+            <td class="input" colspan="3"><input type="submit" value="Add" /></td>
         </form>
     </tr>
     {{range .CreatureInformation}}
@@ -25,6 +26,10 @@
             {{redirectURIInput}}
             <td><input type="text" id="damageAmount" name="damageAmount" value="" /></td>
             <td><input type="submit" value="💥" /></td>
+        </form>
+        <form method="post" action="{{.DeleteURL}}">
+            {{redirectURIInput}}
+            <td><input type="submit" value="🗑️" /></td>
         </form>
     </tr>
     {{end}}

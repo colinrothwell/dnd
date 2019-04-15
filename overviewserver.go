@@ -25,7 +25,7 @@ func attachPrefixedTemplate(root, child *template.Template, prefix string) (*tem
 	return t.Lookup(rootName), nil
 }
 
-func CreateOverviewServer(t *template.Template, es *EncounterServer, ds *DiceServer) *OverviewServer {
+func NewOverviewServer(t *template.Template, es *EncounterServer, ds *DiceServer) *OverviewServer {
 	t, err := attachPrefixedTemplate(t, es.GetTemplate().Lookup("BodyContent"), "Encounter")
 	if err != nil {
 		log.Fatalf("Catastrophic error attaching encounter body content - %v", err)

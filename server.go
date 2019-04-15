@@ -27,46 +27,46 @@ func sumIntSlice(slice []int) int {
 	return result
 }
 
-type GetPostHandler interface {
-	HandleGet(w http.ResponseWriter, r *http.Request)
-	HandlePost(w http.ResponseWriter, r *http.Request)
-}
-
-func StandardGetPostHandler(h GetPostHandler) http.Handler {
+func getPostHandler(handleGet, handlePost http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			h.HandlePost(w, r)
+			handlePost.ServeHTTP(w, r)
 		} else {
-			h.HandleGet(w, r)
+			handleGet.ServeHTTP(w, r)
 		}
 	})
 }
 
-// A TemplatedGetPostHandler renders get requests using a template
-type TemplatedGetPostHandler interface {
+// A TemplatedGetHandler renders get requests using a template
+type TemplatedGetHandler interface {
 	GetTemplate() *template.Template
-	GenerateTemplateData(r *http.Request) interface{}
-	HandlePost(w http.ResponseWriter, r *http.Request)
+	GenerateTemplateData(*http.Request) interface{}
 }
 
-// StandardTemplatedGetPostHandler converts a TemplatedGetPostHandler to an http.Handler
-func StandardTemplatedGetPostHandler(t TemplatedGetPostHandler) http.Handler {
+func standardTemplatedGetHandler(h TemplatedGetHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			t.HandlePost(w, r)
-		} else {
-			data := t.GenerateTemplateData(r)
-			temp := t.GetTemplate()
-			temp = temp.Funcs(template.FuncMap{"redirectURIInput": func() template.HTML {
-				input := "<input type=\"hidden\" name=\"redirectURI\" value=\"" + r.RequestURI + "\" />"
-				return template.HTML(input)
-			}})
-			err := temp.Execute(w, data)
-			if err != nil {
-				log.Print(err)
-			}
+		data := h.GenerateTemplateData(r)
+		temp := h.GetTemplate()
+		temp = temp.Funcs(template.FuncMap{"redirectURIInput": func() template.HTML {
+			input := "<input type=\"hidden\" name=\"redirectURI\" value=\"" + r.RequestURI + "\" />"
+			return template.HTML(input)
+		}})
+		err := temp.Execute(w, data)
+		if err != nil {
+			log.Print(err)
 		}
 	})
+}
+
+type TemplatedGetPostHandler interface {
+	TemplatedGetHandler
+	HandlePost(http.ResponseWriter, *http.Request)
+}
+
+func standardTemplatedGetPostHandler(h TemplatedGetPostHandler) http.Handler {
+	return getPostHandler(
+		standardTemplatedGetHandler(h),
+		http.HandlerFunc(h.HandlePost))
 }
 
 // ParseFormAndGetRedirectURI parses the form associated with an HTTP request, and returns the URI
@@ -83,6 +83,39 @@ func ParseFormAndGetRedirectURI(r *http.Request) (string, error) {
 		return redirectURISlice[0], nil
 	}
 	return "/", fmt.Errorf("form '%v' didn't contain redirectURI", r.Form)
+}
+
+type RedirectPostHandler interface {
+	HandlePost(*http.Request) error
+}
+
+func standardRedirectPostHandler(h RedirectPostHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		redirectURI, err := ParseFormAndGetRedirectURI(r)
+		if err != nil {
+			log.Printf("Error getting direct URL from request to '%v'", r.RequestURI)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		err = h.HandlePost(r)
+		if err != nil {
+			log.Printf("Error handling post - %v", err)
+		}
+		http.Redirect(w, r, redirectURI, http.StatusSeeOther)
+	})
+}
+
+// TemplatedGetRedirectPostHandler does what it says on the tin: this is the pattern
+// encounter follows.
+type TemplatedGetRedirectPostHandler interface {
+	TemplatedGetHandler
+	RedirectPostHandler
+}
+
+func standardTemplatedGetRedirectPostHandler(h TemplatedGetRedirectPostHandler) http.Handler {
+	return getPostHandler(
+		standardTemplatedGetHandler(h),
+		standardRedirectPostHandler(h))
 }
 
 func loadTemplate(name string) *template.Template {
@@ -111,7 +144,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Catacylsmic error initialising - %v", err)
 	}
-	initialisationHandler := StandardTemplatedGetPostHandler(initialisationServer)
+	initialisationHandler := standardTemplatedGetPostHandler(initialisationServer)
 
 	diceTemplate := loadTemplate("roll.html")
 	encounterTemplate := loadTemplate("encounter.html")
@@ -128,11 +161,14 @@ func main() {
 			initialisationHandler.ServeHTTP(w, r)
 			if initialisationServer.InitialisationComplete {
 				diceServer := DiceServer{diceTemplate, initialisationServer.Party}
-				encounterServer := EncounterServer{encounterTemplate, initialisationServer.Party}
-				overviewServer := CreateOverviewServer(overviewTemplate, &encounterServer, &diceServer)
-				logicServer.Handle("/encounter/", StandardTemplatedGetPostHandler(&encounterServer))
-				logicServer.Handle("/roll/", StandardTemplatedGetPostHandler(&diceServer))
-				logicServer.Handle("/", StandardTemplatedGetPostHandler(overviewServer))
+				encounterServer, err := NewEncounterServer(encounterTemplate, initialisationServer.Party)
+				if err != nil {
+					log.Fatalf("Couldn't create encounter server - %v", err)
+				}
+				overviewServer := NewOverviewServer(overviewTemplate, encounterServer, &diceServer)
+				logicServer.Handle("/encounter/", standardTemplatedGetRedirectPostHandler(encounterServer))
+				logicServer.Handle("/roll/", standardTemplatedGetPostHandler(&diceServer))
+				logicServer.Handle("/", standardTemplatedGetPostHandler(overviewServer))
 			}
 		}
 	})

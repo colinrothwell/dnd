@@ -20,7 +20,7 @@
     <tr>
         <td>{{.Type}}</td>
         <td>{{.Name}}</td>
-        <td class="{{.CurrentHealthClass}}">{{.CurrentHealth}}</td>
+        <td class="{{.CurrentHealthClass}}">{{.CurrentHealth}} / {{.MaxHealth}}</td>
         <form method="post" action="{{.DamageURL}}">
             {{redirectURIInput}}
             <td><input type="text" id="damageAmount" name="damageAmount" value="" /></td>

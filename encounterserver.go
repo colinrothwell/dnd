@@ -10,9 +10,9 @@ import (
 )
 
 type CreatureInformation struct {
-	Type, Name, DamageURL string
-	CurrentHealth         int
-	CurrentHealthClass    string
+	Type, Name, DamageURL    string
+	CurrentHealth, MaxHealth int
+	CurrentHealthClass       string
 }
 
 type EncounterData struct {
@@ -46,6 +46,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request) interface{} {
 			creature.Name,
 			"/encounter/" + strconv.Itoa(i),
 			creature.RolledHealth - creature.DamageTaken,
+			creature.RolledHealth,
 			hc}
 	}
 	data := EncounterData{creatureInformations, "", ""}

@@ -27,14 +27,16 @@ func sumIntSlice(slice []int) int {
 	return result
 }
 
-func getPostHandler(handleGet, handlePost http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			handlePost.ServeHTTP(w, r)
-		} else {
-			handleGet.ServeHTTP(w, r)
-		}
-	})
+type getPostHandler struct {
+	get, post http.Handler
+}
+
+func (h *getPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		h.post.ServeHTTP(w, r)
+	} else {
+		h.get.ServeHTTP(w, r)
+	}
 }
 
 // A TemplatedGetHandler renders get requests using a template
@@ -43,19 +45,21 @@ type TemplatedGetHandler interface {
 	GenerateTemplateData(*http.Request) interface{}
 }
 
-func standardTemplatedGetHandler(h TemplatedGetHandler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data := h.GenerateTemplateData(r)
-		temp := h.GetTemplate()
-		temp = temp.Funcs(template.FuncMap{"redirectURIInput": func() template.HTML {
-			input := "<input type=\"hidden\" name=\"redirectURI\" value=\"" + r.RequestURI + "\" />"
-			return template.HTML(input)
-		}})
-		err := temp.Execute(w, data)
-		if err != nil {
-			log.Print(err)
-		}
-	})
+type standardTemplatedGetHandler struct {
+	TemplatedGetHandler
+}
+
+func (h *standardTemplatedGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	data := h.GenerateTemplateData(r)
+	temp := h.GetTemplate()
+	temp = temp.Funcs(template.FuncMap{"redirectURIInput": func() template.HTML {
+		input := "<input type=\"hidden\" name=\"redirectURI\" value=\"" + r.RequestURI + "\" />"
+		return template.HTML(input)
+	}})
+	err := temp.Execute(w, data)
+	if err != nil {
+		log.Print(err)
+	}
 }
 
 type TemplatedGetPostHandler interface {
@@ -64,9 +68,9 @@ type TemplatedGetPostHandler interface {
 }
 
 func standardTemplatedGetPostHandler(h TemplatedGetPostHandler) http.Handler {
-	return getPostHandler(
-		standardTemplatedGetHandler(h),
-		http.HandlerFunc(h.HandlePost))
+	return &getPostHandler{
+		&standardTemplatedGetHandler{h},
+		http.HandlerFunc(h.HandlePost)}
 }
 
 // ParseFormAndGetRedirectURI parses the form associated with an HTTP request, and returns the URI
@@ -89,20 +93,22 @@ type RedirectPostHandler interface {
 	HandlePost(*http.Request) error
 }
 
-func standardRedirectPostHandler(h RedirectPostHandler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		redirectURI, err := ParseFormAndGetRedirectURI(r)
-		if err != nil {
-			log.Printf("Error getting direct URL from request to '%v'", r.RequestURI)
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-		err = h.HandlePost(r)
-		if err != nil {
-			log.Printf("Error handling post - %v", err)
-		}
-		http.Redirect(w, r, redirectURI, http.StatusSeeOther)
-	})
+type standardRedirectPostHandler struct {
+	RedirectPostHandler
+}
+
+func (h *standardRedirectPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	redirectURI, err := ParseFormAndGetRedirectURI(r)
+	if err != nil {
+		log.Printf("Error getting direct URL from request to '%v'", r.RequestURI)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	err = h.HandlePost(r)
+	if err != nil {
+		log.Printf("Error handling post - %v", err)
+	}
+	http.Redirect(w, r, redirectURI, http.StatusSeeOther)
 }
 
 // TemplatedGetRedirectPostHandler does what it says on the tin: this is the pattern
@@ -113,9 +119,9 @@ type TemplatedGetRedirectPostHandler interface {
 }
 
 func standardTemplatedGetRedirectPostHandler(h TemplatedGetRedirectPostHandler) http.Handler {
-	return getPostHandler(
-		standardTemplatedGetHandler(h),
-		standardRedirectPostHandler(h))
+	return &getPostHandler{
+		&standardTemplatedGetHandler{h},
+		&standardRedirectPostHandler{h}}
 }
 
 func loadTemplate(name string) *template.Template {

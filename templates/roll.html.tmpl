@@ -1,27 +1,3 @@
-{{define "HeadContent"}}
-<script type="text/javascript">
-    function clearCustomRollDefault() {
-        if (document.customRollForm.roll.value == "Custom Roll") {
-            document.customRollForm.roll.value = "";
-        }
-        if (document.customRollForm.roll.value != "Custom Roll") {
-            document.customRollForm.roll.className = "";
-        }
-    }
-    function restoreCustomRollDefault() {
-        if (document.customRollForm.roll.value == "") {
-            document.customRollForm.roll.value = "Custom Roll";
-            document.customRollForm.roll.className = "default";
-        }
-    }
-    function setup() {
-        document.customRollForm.roll.onclick = clearCustomRollDefault;
-        document.customRollForm.roll.onblur = restoreCustomRollDefault;
-        clearCustomRollDefault();
-    }
-    document.addEventListener("DOMContentLoaded", setup, false);
-</script>
-{{end}}
 {{define "BodyContent" }}
 <ul class="roll-buttons">
     <form action="/roll/" method="post">
@@ -36,7 +12,7 @@
 </ul>
 <form name="customRollForm" action="/roll/" method="post">
     {{redirectURIInput}}
-    <input id="roll" type="text" name="roll" value="{{ .LastCustomRoll }}" class="default">
+    <input id="roll" type="text" name="roll" value="{{ .LastCustomRoll }}">
     <input id="submit-custom" type="submit" name="roll-custom" value="Roll!">
 </form>
 {{if .HasResult }}

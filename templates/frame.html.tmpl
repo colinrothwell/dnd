@@ -3,9 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>D&D Encounter</title>
-    <link href="https://fonts.googleapis.com/css?family=Nunito+Sans" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
     <link rel="stylesheet" href="/static/reset.css" />
     <link rel="stylesheet" href="/static/style-all.css" />
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            var textInputs = document.querySelectorAll('input[type="text"]')
+            for (var i in textInputs) {
+                var input = textInputs[i];
+                input.onfocus = function (focusEvent) {
+                    var input = focusEvent.target;
+                    input.classList.add("changed");
+                    if (input.value == input.defaultValue) {
+                        input.value = "";
+                    }
+                }
+                input.onblur = function (focusEvent) {
+                    var input = focusEvent.target;
+                    if (input.value == "") {
+                        input.value = input.defaultValue;
+                    }
+                    if (input.value == input.defaultValue) {
+                        input.classList.remove("changed");
+                    }
+                }
+            }
+        })
+    </script>
     {{template "HeadContent" .}}
 </head>
 <body>

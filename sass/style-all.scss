@@ -1,12 +1,13 @@
-$text-color: #446575;
+$text-color: #444;
 
-$background: #d8ebf4;
-$element-background: #f2fbff;
+$background: #222;
+$element-background: #fff;
 $input-background: #fff;
 
-$accent1: #66aacc;
-$accent2: #77bbdd;
-$accent3: #456875;
+$accent1: #444;
+$accent2: #555;
+
+$accent-color: #2cf;
 
 $column-spacing: 0;
 $roll-width: 20rem;
@@ -19,13 +20,13 @@ html {
   left: 0;
   min-width: 55rem;
 
-  font-size: 12pt;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.2;
   text-align: center;
 }
 
 body {
-  font-family: "Nunito Sans", sans-serif;
+  font-family: "Source Sans Pro", san-serif;
   position: relative;
   min-height: 100%;
   padding: 0;
@@ -34,29 +35,47 @@ body {
   color: $text-color;
 }
 
+$input-padding-size: 0.3rem;
 input {
   text-align: center;
-  padding: 0.25rem;
+  padding: $input-padding-size;
   margin: 0;
   border: none;
   background: $input-background;
   color: #fff;
   width: 100%;
+  line-height: 1.2rem;
+  vertical-align: middle;
 }
+
+$text-focus-border-size: 0.2rem;
+$text-focus-padding: $input-padding-size 0 ($input-padding-size - $text-focus-border-size) 0;
 
 input[type="text"] {
   background: $input-background;
-  color: $accent1;
-  padding: 0.25rem 0;
+  font-style: italic;
+  color: #999;
+  padding: $input-padding-size 0;
 }
 
-input[type="text"].default {
-  color: $accent2;
-  font-style: italic;
+input[type="text"].changed {
+  font-style: normal;
+  color: #222;
+  border: none;
+  border-bottom: #bbb solid $text-focus-border-size;
+  padding: $text-focus-padding;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border: none;
+  border-bottom: $accent-color solid $text-focus-border-size;
+  padding: $text-focus-padding;
 }
 
 input[type="submit"] {
   background: $accent1;
+  font-size: 0.8rem;
 }
 
 input[type="submit"]:hover {
@@ -67,8 +86,11 @@ input[type="submit"]:hover {
 h1,
 h2,
 h3,
-h4 {
-  clear: both;
+h4,
+th,
+input[type="submit"] {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
   font-weight: bold;
 }
 
@@ -105,21 +127,16 @@ h4 {
 }
 
 th {
-  font-weight: bold;
+  font-size: 0.8rem;
   background: $accent1;
   color: #fff;
   padding: 0.5rem;
 }
 
 td {
-  $border-style: $element-background 0.1rem solid;
+  $border-style: #ccc 1px solid;
   border-top: $border-style;
   border-bottom: $border-style;
-}
-
-td.input {
-  padding-left: 0.1rem;
-  padding-right: 0.1rem;
 }
 
 td.damaged {
@@ -137,13 +154,18 @@ div#encounter {
   margin-right: $roll-width + 1rem;
   padding: 1rem;
 
+  td.damageAmount {
+    width: 6rem;
+  }
+
+  input[type="submit"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
   table {
     width: 100%;
     background: $element-background;
-  }
-
-  input[type="text"]#damageAmount {
-    width: 3.5rem;
   }
 }
 

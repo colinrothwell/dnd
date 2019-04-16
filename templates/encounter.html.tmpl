@@ -24,7 +24,7 @@
         <td class="{{.CurrentHealthClass}}">{{.CurrentHealth}} / {{.MaxHealth}}</td>
         <form method="post" action="{{.DamageURL}}">
             {{redirectURIInput}}
-            <td><input type="text" id="damageAmount" name="damageAmount" value="" /></td>
+            <td class="damageAmount"><input type="text" name="damageAmount" value="Amount" /></td>
             <td><input type="submit" value="💥" /></td>
         </form>
         <form method="post" action="{{.DeleteURL}}">

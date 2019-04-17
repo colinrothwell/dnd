@@ -19,14 +19,6 @@ func getURLArgument(u *url.URL) (string, error) {
 	return u.Path[slashLastIndex+1:], nil
 }
 
-func sumIntSlice(slice []int) int {
-	result := 0
-	for _, n := range slice {
-		result += n
-	}
-	return result
-}
-
 type getPostHandler struct {
 	get, post http.Handler
 }
@@ -173,7 +165,7 @@ func main() {
 				}
 				overviewServer := NewOverviewServer(overviewTemplate, encounterServer, &diceServer)
 				logicServer.Handle("/encounter/", standardTemplatedGetRedirectPostHandler(encounterServer))
-				logicServer.Handle("/roll/", standardTemplatedGetPostHandler(&diceServer))
+				logicServer.Handle("/roll/", standardTemplatedGetRedirectPostHandler(&diceServer))
 				logicServer.Handle("/", standardTemplatedGetRedirectPostHandler(overviewServer))
 			}
 		}

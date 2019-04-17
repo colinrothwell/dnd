@@ -2,8 +2,8 @@ package main
 
 import (
 	"dnd/dice"
+	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -36,25 +36,19 @@ func (diceServer *DiceServer) GenerateTemplateData(r *http.Request) interface{} 
 	return templateValues
 }
 
-func (diceServer *DiceServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	redirectURI, err := ParseFormAndGetRedirectURI(r)
-	if err != nil {
-		log.Printf("Error parsing form - %v", err)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
+func (diceServer *DiceServer) HandlePost(r *http.Request) error {
 	roll, err := dice.ParseRollString(r.Form["roll"][0])
+	if err != nil {
+		// TODO: Handle invalid roll strings better
+		return fmt.Errorf("error parsing roll string")
+	}
 	if len(r.Form["roll-custom"]) > 0 {
 		diceServer.Party.LastCustomRoll = r.Form["roll"][0]
 	}
-	if err == nil {
-		diceServer.Party.PreviousRolls = append(diceServer.Party.PreviousRolls, roll.Simulate())
-	} else {
-		log.Println(err)
-	}
+	diceServer.Party.PreviousRolls = append(diceServer.Party.PreviousRolls, roll.Simulate())
 	err = diceServer.Party.Save()
 	if err != nil {
-		log.Printf("Error saving party - %v", err)
+		return fmt.Errorf("error saving party - %v", err)
 	}
-	http.Redirect(w, r, redirectURI, 303)
+	return nil
 }

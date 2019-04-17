@@ -98,20 +98,20 @@ func (s *initialisationServer) initialiseWithNewParty(name string) error {
 func (s *initialisationServer) HandlePost(r *http.Request) error {
 	argument, err := getURLArgument(r.URL)
 	if err != nil {
-		return fmt.Errorf("Error getting argument - %v", err)
+		return fmt.Errorf("error getting argument - %v", err)
 	}
 	if argument == "" {
 		err := s.initialiseWithNewParty(r.Form["partyName"][0])
 		if err != nil {
-			return fmt.Errorf("Error creating file for party - %v", err)
+			return fmt.Errorf("error creating file for party - %v", err)
 		}
 	} else {
 		i, err := strconv.Atoi(argument)
 		if err != nil {
-			return fmt.Errorf("Error parsing party index - %v", err)
+			return fmt.Errorf("error parsing party index - %v", err)
 		}
 		if i < 0 || i >= len(s.parties) {
-			return fmt.Errorf("Party index %d out of range", i)
+			return fmt.Errorf("party index %d out of range", i)
 		}
 		s.Party = &s.parties[i]
 	}

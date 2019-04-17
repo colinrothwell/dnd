@@ -54,17 +54,6 @@ func (h *standardTemplatedGetHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 	}
 }
 
-type TemplatedGetPostHandler interface {
-	TemplatedGetHandler
-	HandlePost(http.ResponseWriter, *http.Request)
-}
-
-func standardTemplatedGetPostHandler(h TemplatedGetPostHandler) http.Handler {
-	return &getPostHandler{
-		&standardTemplatedGetHandler{h},
-		http.HandlerFunc(h.HandlePost)}
-}
-
 // ParseFormAndGetRedirectURI parses the form associated with an HTTP request, and returns the URI
 // to redirect to after finishing handling the request. It returns "/" in case of an error.
 func ParseFormAndGetRedirectURI(r *http.Request) (string, error) {

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-// Represents all of the information about a Party that should be persisted
+// Party represents all of the information about a party that should be persisted
 type Party struct {
 	Filename, Name string
 

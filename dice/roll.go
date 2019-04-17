@@ -11,38 +11,38 @@ import (
 )
 
 type diceUnitToken interface{}
-type DdiceUnitToken struct{}
-type SigndiceUnitToken rune
-type NumberdiceUnitToken uint
+type dDiceUnitToken struct{}
+type signDiceUnitToken rune
+type numberDiceUnitToken uint
 
-func (_ DdiceUnitToken) String() string {
+func (d dDiceUnitToken) String() string {
 	return "<DRT: d>"
 }
 
-func (specifier SigndiceUnitToken) String() string {
+func (specifier signDiceUnitToken) String() string {
 	return fmt.Sprintf("<DRT: %s>", string(specifier))
 }
 
 type tokeniseState int
 
 const (
-	NotReadingAnything tokeniseState = iota
-	ReadingNumber
+	notReadingAnything tokeniseState = iota
+	readingNumber
 )
 
-func TokenisediceUnitString(diceRollString string) ([]diceUnitToken, error) {
+func tokenisediceUnitString(diceRollString string) ([]diceUnitToken, error) {
 	tokenised := make([]diceUnitToken, 0)
-	state := NotReadingAnything
+	state := notReadingAnything
 	var builder strings.Builder
 
 	tokeniseNumberIfNecessary := func() {
-		if state == ReadingNumber {
-			state = NotReadingAnything
+		if state == readingNumber {
+			state = notReadingAnything
 			number, error := strconv.Atoi(builder.String())
 			if error != nil {
 				panic(error)
 			}
-			tokenised = append(tokenised, NumberdiceUnitToken(number))
+			tokenised = append(tokenised, numberDiceUnitToken(number))
 			builder.Reset()
 		}
 	}
@@ -53,12 +53,12 @@ func TokenisediceUnitString(diceRollString string) ([]diceUnitToken, error) {
 		}
 		switch r {
 		case 'd', 'D':
-			tokenised = append(tokenised, DdiceUnitToken{})
+			tokenised = append(tokenised, dDiceUnitToken{})
 		case '+', '-':
-			tokenised = append(tokenised, SigndiceUnitToken(r))
+			tokenised = append(tokenised, signDiceUnitToken(r))
 		default:
 			if unicode.IsNumber(r) {
-				state = ReadingNumber
+				state = readingNumber
 				builder.WriteRune(r)
 			} else if !unicode.IsSpace(r) {
 				return nil, fmt.Errorf("%s is not part of a valid dice string", string(r))
@@ -126,14 +126,14 @@ func (faceCount *FaceCountMap) Max() (max int) {
 	return max
 }
 
-type faceCountMapResult struct {
+type FaceCountMapResult struct {
 	rolls [][]uint
 	sum   uint
 }
 
-func (faceCount *FaceCountMap) SimulateResult() *faceCountMapResult {
+func (faceCount *FaceCountMap) SimulateResult() *FaceCountMapResult {
 	faceCount.sortFacesDescending()
-	var result faceCountMapResult
+	var result FaceCountMapResult
 	result.rolls = make([][]uint, len(faceCount.Faces))
 	for i, face := range faceCount.Faces {
 		count := faceCount.Counts[face]
@@ -204,7 +204,7 @@ func (roll Roll) Max() int {
 	return int(roll.Positive.Max()) - int(roll.Negative.Min()) + roll.Offset
 }
 
-// Need to be able to read
+// ParseRollString can read strings of the forms...
 // d6
 // -d6
 // 2d6
@@ -213,28 +213,28 @@ func (roll Roll) Max() int {
 // 2d6 - 2
 // 3d8 + 2d6 + 2
 func ParseRollString(diceRollString string) (*Roll, error) {
-	tokenisedString, error := TokenisediceUnitString(diceRollString)
+	tokenisedString, error := tokenisediceUnitString(diceRollString)
 	if error != nil {
 		return nil, error
 	}
 	// Read up to the end of the string or the first add/sub token
 	rolls := &Roll{createFaceCountMap(), createFaceCountMap(), 0}
 	var die []diceUnitToken
-	var nextElement SigndiceUnitToken
+	var nextElement signDiceUnitToken
 	var nextElementIsAddendSpecifier bool
 	nextIsNegative := false
 	startIndex := 0
 	endIndex := 1
 	for endIndex <= len(tokenisedString) {
 		if endIndex < len(tokenisedString) {
-			nextElement, nextElementIsAddendSpecifier = tokenisedString[endIndex].(SigndiceUnitToken)
+			nextElement, nextElementIsAddendSpecifier = tokenisedString[endIndex].(signDiceUnitToken)
 		}
 		if nextElementIsAddendSpecifier || endIndex == len(tokenisedString) {
 			die = tokenisedString[startIndex:endIndex]
 			var count, faces uint
 			switch len(die) {
 			case 1:
-				value, ok := die[0].(NumberdiceUnitToken)
+				value, ok := die[0].(numberDiceUnitToken)
 				if !ok {
 					return nil, errors.New("invalid die format")
 				}
@@ -244,26 +244,26 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 					rolls.Offset += int(value)
 				}
 			case 2:
-				_, ok := die[0].(DdiceUnitToken)
+				_, ok := die[0].(dDiceUnitToken)
 				if !ok {
 					return nil, errors.New("invalid die symbol")
 				}
-				value, valueOk := die[1].(NumberdiceUnitToken)
+				value, valueOk := die[1].(numberDiceUnitToken)
 				if !valueOk {
 					return nil, errors.New("invalid number of sides marker")
 				}
 				count = 1
 				faces = uint(value)
 			case 3:
-				left, leftOk := die[0].(NumberdiceUnitToken)
+				left, leftOk := die[0].(numberDiceUnitToken)
 				if !leftOk {
 					return nil, errors.New("invalid number of dice")
 				}
-				_, dieSymbolOk := die[1].(DdiceUnitToken)
+				_, dieSymbolOk := die[1].(dDiceUnitToken)
 				if !dieSymbolOk {
 					return nil, errors.New("invalid die symbol")
 				}
-				right, rightOk := die[2].(NumberdiceUnitToken)
+				right, rightOk := die[2].(numberDiceUnitToken)
 				if !rightOk {
 					return nil, errors.New("invalid number of sides")
 				}
@@ -279,7 +279,7 @@ func ParseRollString(diceRollString string) (*Roll, error) {
 					rolls.Positive.add(count, faces)
 				}
 			}
-			if nextElement == SigndiceUnitToken('-') {
+			if nextElement == signDiceUnitToken('-') {
 				nextIsNegative = true
 			} else {
 				nextIsNegative = false

@@ -150,7 +150,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Catacylsmic error initialising - %v", err)
 	}
-	initialisationHandler := standardTemplatedGetPostHandler(initialisationServer)
+	initialisationHandler := standardTemplatedGetRedirectPostHandler(initialisationServer)
 
 	diceTemplate := loadTemplate("roll.html")
 	encounterTemplate := loadTemplate("encounter.html")

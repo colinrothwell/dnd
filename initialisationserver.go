@@ -95,41 +95,26 @@ func (s *initialisationServer) initialiseWithNewParty(name string) error {
 	return nil
 }
 
-func (s *initialisationServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	redirectURI, err := ParseFormAndGetRedirectURI(r)
-	if err != nil {
-		log.Printf("Error parsing form - %v", err)
-		http.Redirect(w, r, redirectURI, 303)
-		return
-	}
+func (s *initialisationServer) HandlePost(r *http.Request) error {
 	argument, err := getURLArgument(r.URL)
 	if err != nil {
-		log.Printf("Error getting argument - %v", err)
-		http.Redirect(w, r, redirectURI, http.StatusSeeOther)
-		return
+		return fmt.Errorf("Error getting argument - %v", err)
 	}
 	if argument == "" {
 		err := s.initialiseWithNewParty(r.Form["partyName"][0])
 		if err != nil {
-			log.Printf("Error creating file for party - %v", err)
-			http.Redirect(w, r, redirectURI, 303)
-			return
+			return fmt.Errorf("Error creating file for party - %v", err)
 		}
 	} else {
 		i, err := strconv.Atoi(argument)
 		if err != nil {
-			log.Printf("Error parsing party index - %v", err)
-			http.Redirect(w, r, redirectURI, 303)
-			return
+			return fmt.Errorf("Error parsing party index - %v", err)
 		}
 		if i < 0 || i >= len(s.parties) {
-			log.Printf("Party index %d out of range", i)
-			http.Redirect(w, r, redirectURI, 303)
-			return
+			return fmt.Errorf("Party index %d out of range", i)
 		}
 		s.Party = &s.parties[i]
-		log.Printf("Using existing party '%s'", s.Party.Name)
 	}
 	s.InitialisationComplete = true
-	http.Redirect(w, r, redirectURI, http.StatusSeeOther)
+	return nil
 }

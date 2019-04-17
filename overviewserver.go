@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -58,7 +59,6 @@ func (os *OverviewServer) GenerateTemplateData(r *http.Request) interface{} {
 	return data
 }
 
-func (os *OverviewServer) HandlePost(w http.ResponseWriter, r *http.Request) {
-	log.Println("Error! OverviewServer should never get post requests")
-	http.Redirect(w, r, r.RequestURI, 303)
+func (os *OverviewServer) HandlePost(r *http.Request) error {
+	return fmt.Errorf("Error! OverviewServer should never get post requests")
 }

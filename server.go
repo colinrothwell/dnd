@@ -174,7 +174,7 @@ func main() {
 				overviewServer := NewOverviewServer(overviewTemplate, encounterServer, &diceServer)
 				logicServer.Handle("/encounter/", standardTemplatedGetRedirectPostHandler(encounterServer))
 				logicServer.Handle("/roll/", standardTemplatedGetPostHandler(&diceServer))
-				logicServer.Handle("/", standardTemplatedGetPostHandler(overviewServer))
+				logicServer.Handle("/", standardTemplatedGetRedirectPostHandler(overviewServer))
 			}
 		}
 	})

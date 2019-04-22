@@ -54,6 +54,22 @@ func (h *standardTemplatedGetHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 	}
 }
 
+// TemplatedPartyGetHandler a TemplatedGetParty handler requires a party to render a template
+// to render its get request
+type TemplatedPartyGetHandler interface {
+	GetTemplate() *template.Template
+	GenerateTemplateData(*http.Request, *Party) interface{}
+}
+
+type standardTemplatedPartyGetHandler struct {
+	party *Party
+	TemplatedPartyGetHandler
+}
+
+func (h *standardTemplatedPartyGetHandler) GenerateTemplateData(r *http.Request) interface{} {
+	return h.TemplatedPartyGetHandler.GenerateTemplateData(r, h.party)
+}
+
 // ParseFormAndGetRedirectURI parses the form associated with an HTTP request, and returns the URI
 // to redirect to after finishing handling the request. It returns "/" in case of an error.
 func ParseFormAndGetRedirectURI(r *http.Request) (string, error) {
@@ -92,6 +108,25 @@ func (h *standardRedirectPostHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 	http.Redirect(w, r, redirectURI, http.StatusSeeOther)
 }
 
+type PartyActionPostHandler interface {
+	HandlePost(*http.Request, *Party) (ReversiblePartyAction, error)
+}
+
+type partyActionRedirectPostHandler struct {
+	party                  *Party
+	partyActionPostHandler PartyActionPostHandler
+}
+
+func (h *partyActionRedirectPostHandler) HandlePost(r *http.Request) error {
+	action, err := h.partyActionPostHandler.HandlePost(r, h.party)
+	if err != nil {
+		return err
+	}
+	h.party.actions.Push(action)
+	action.apply(h.party)
+	return nil
+}
+
 // TemplatedGetRedirectPostHandler does what it says on the tin: this is the pattern
 // encounter follows.
 type TemplatedGetRedirectPostHandler interface {
@@ -103,6 +138,18 @@ func standardTemplatedGetRedirectPostHandler(h TemplatedGetRedirectPostHandler) 
 	return &getPostHandler{
 		&standardTemplatedGetHandler{h},
 		&standardRedirectPostHandler{h}}
+}
+
+// TemplatedGetPartyActionHandler also does what it says on the tin.
+type TemplatedGetPartyActionHandler interface {
+	TemplatedPartyGetHandler
+	PartyActionPostHandler
+}
+
+func standardPartyActionHandler(h TemplatedGetPartyActionHandler, p *Party) http.Handler {
+	return &getPostHandler{
+		&standardTemplatedGetHandler{&standardTemplatedPartyGetHandler{p, h}},
+		&standardRedirectPostHandler{&partyActionRedirectPostHandler{p, h}}}
 }
 
 func loadTemplate(name string) *template.Template {
@@ -148,14 +195,18 @@ func main() {
 			initialisationHandler.ServeHTTP(w, r)
 			if initialisationServer.InitialisationComplete {
 				diceServer := DiceServer{diceTemplate, initialisationServer.Party}
-				encounterServer, err := NewEncounterServer(encounterTemplate, initialisationServer.Party)
+				encounterServer, err := NewEncounterServer(encounterTemplate)
 				if err != nil {
 					log.Fatalf("Couldn't create encounter server - %v", err)
 				}
 				overviewServer := NewOverviewServer(overviewTemplate, encounterServer, &diceServer)
-				logicServer.Handle("/encounter/", standardTemplatedGetRedirectPostHandler(encounterServer))
+				logicServer.Handle("/encounter/",
+					standardPartyActionHandler(encounterServer, initialisationServer.Party))
 				logicServer.Handle("/roll/", standardTemplatedGetRedirectPostHandler(&diceServer))
-				logicServer.Handle("/", standardTemplatedGetRedirectPostHandler(overviewServer))
+				logicServer.Handle("/", &getPostHandler{
+					&standardTemplatedGetHandler{&standardTemplatedPartyGetHandler{
+						initialisationServer.Party, overviewServer}},
+					&standardRedirectPostHandler{overviewServer}})
 			}
 		}
 	})

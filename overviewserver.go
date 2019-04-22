@@ -51,9 +51,9 @@ type OverviewTemplateData struct {
 	DiceData      interface{}
 }
 
-func (os *OverviewServer) GenerateTemplateData(r *http.Request) interface{} {
+func (os *OverviewServer) GenerateTemplateData(r *http.Request, p *Party) interface{} {
 	data := OverviewTemplateData{
-		os.encounterServer.GenerateTemplateData(r),
+		os.encounterServer.GenerateTemplateData(r, p),
 		os.diceServer.GenerateTemplateData(r),
 	}
 	return data

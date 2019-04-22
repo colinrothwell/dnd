@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/gob"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -57,11 +56,9 @@ func newInitialisationServer(dataDir string, t *template.Template) (*initialisat
 				log.Printf("Error opening .party.gob file - %v", err)
 			}
 			defer file.Close()
-			decoder := gob.NewDecoder(file)
-			party := &Party{}
-			err = decoder.Decode(party)
+			party, err := LoadParty(file)
 			if err != nil {
-				log.Printf("Error decoding party - %v", err)
+				log.Printf("Error loading party '%s' - %v", fileName, err)
 				continue
 			}
 			s.parties = append(s.parties, *party)

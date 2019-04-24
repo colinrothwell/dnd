@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dnd/party"
 	"encoding/gob"
 	"io/ioutil"
 	"os"
@@ -17,7 +18,7 @@ func TestGob(t *testing.T) {
 
 	f, err = os.Create(fn)
 	e := gob.NewEncoder(f)
-	var encodeParty Party
+	var encodeParty party.Party
 	encodeParty.Filename = "colin"
 	encodeParty.Name = "is"
 	err = e.Encode(encodeParty)
@@ -34,7 +35,7 @@ func TestGob(t *testing.T) {
 		t.Fatalf("Error opening file for reading - %v", err)
 	}
 	d := gob.NewDecoder(f)
-	var p Party
+	var p party.Party
 	p.Filename = "bugger"
 	err = d.Decode(&p)
 	if err != nil {

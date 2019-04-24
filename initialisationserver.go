@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dnd/party"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -20,9 +21,9 @@ type PartyInitialisationData struct {
 type initialisationServer struct {
 	dataDir                string
 	template               *template.Template
-	parties                []Party
+	parties                []party.Party
 	InitialisationComplete bool
-	Party                  *Party
+	Party                  *party.Party
 }
 
 func getDataDir() string {
@@ -42,7 +43,7 @@ func getDataDir() string {
 }
 
 func newInitialisationServer(dataDir string, t *template.Template) (*initialisationServer, error) {
-	s := initialisationServer{dataDir, t, make([]Party, 0), false, nil}
+	s := initialisationServer{dataDir, t, make([]party.Party, 0), false, nil}
 	contents, err := ioutil.ReadDir(s.dataDir)
 	if err != nil {
 		return nil, fmt.Errorf("error when reading data directory - %v", err)
@@ -56,12 +57,12 @@ func newInitialisationServer(dataDir string, t *template.Template) (*initialisat
 				log.Printf("Error opening .party.gob file - %v", err)
 			}
 			defer file.Close()
-			party, err := LoadParty(file)
+			p, err := party.Load(file)
 			if err != nil {
 				log.Printf("Error loading party '%s' - %v", fileName, err)
 				continue
 			}
-			s.parties = append(s.parties, *party)
+			s.parties = append(s.parties, *p)
 			i++
 		}
 	}
@@ -83,7 +84,7 @@ func (s *initialisationServer) GenerateTemplateData(r *http.Request) interface{}
 }
 
 func (s *initialisationServer) initialiseWithNewParty(name string) error {
-	s.Party = NewParty(s.dataDir, name)
+	s.Party = party.New(s.dataDir, name)
 	err := s.Party.Save()
 	if err != nil {
 		log.Printf("Error encoding party - %v", err)

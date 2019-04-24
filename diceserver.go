@@ -2,6 +2,7 @@ package main
 
 import (
 	"dnd/dice"
+	"dnd/party"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 
 type DiceServer struct {
 	Template *template.Template
-	Party    *Party
+	Party    *party.Party
 }
 
 type RollTemplateValues struct {

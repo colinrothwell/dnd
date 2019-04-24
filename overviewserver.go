@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dnd/party"
 	"fmt"
 	"html/template"
 	"log"
@@ -51,7 +52,7 @@ type OverviewTemplateData struct {
 	DiceData      interface{}
 }
 
-func (os *OverviewServer) GenerateTemplateData(r *http.Request, p *Party) interface{} {
+func (os *OverviewServer) GenerateTemplateData(r *http.Request, p *party.Party) interface{} {
 	data := OverviewTemplateData{
 		os.encounterServer.GenerateTemplateData(r, p),
 		os.diceServer.GenerateTemplateData(r),

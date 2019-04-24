@@ -3,6 +3,7 @@ package main
 import (
 	"dnd/creature"
 	"dnd/dice"
+	"dnd/party"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -39,10 +40,10 @@ func (s *EncounterServer) GetTemplate() *template.Template {
 	return s.template
 }
 
-func (s *EncounterServer) GenerateTemplateData(r *http.Request, party *Party) interface{} {
-	creatureCount := len(party.EncounterCreatures)
+func (s *EncounterServer) GenerateTemplateData(r *http.Request, p *party.Party) interface{} {
+	creatureCount := len(p.EncounterCreatures)
 	creatureInformations := make([]CreatureInformation, creatureCount)
-	for i, creature := range party.EncounterCreatures {
+	for i, creature := range p.EncounterCreatures {
 		var hc string
 		if 2*creature.DamageTaken >= creature.RolledHealth {
 			hc = "damaged"
@@ -63,7 +64,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request, party *Party) in
 	}
 	data := EncounterData{creatureInformations, "", ""}
 	if creatureCount > 0 {
-		nextCreatureType := party.EncounterCreatures[creatureCount-1].Type
+		nextCreatureType := p.EncounterCreatures[creatureCount-1].Type
 		data.NextCreatureTypeName = nextCreatureType.Name
 		data.NextCreatureHitDice = nextCreatureType.HitDice.String()
 	}
@@ -75,7 +76,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request, party *Party) in
 // /encounter/new-creature
 // /encounter/damage/(creatureID)
 // /encounter/delete/(creatureID)
-func (s *EncounterServer) HandlePost(r *http.Request, party *Party) (ReversiblePartyAction, error) {
+func (s *EncounterServer) HandlePost(r *http.Request, p *party.Party) (party.ReversibleAction, error) {
 	args := s.postURLRegexp.FindStringSubmatch(r.URL.Path)
 	if args == nil {
 		return nil, fmt.Errorf("couldn't extract arguments from URL Path '%v'", r.URL.Path)
@@ -86,7 +87,7 @@ func (s *EncounterServer) HandlePost(r *http.Request, party *Party) (ReversibleP
 		if err != nil {
 			return nil, fmt.Errorf("error parsing creature dice string - %v", err)
 		}
-		return &AddCreatureAction{creature.Create(
+		return &party.AddCreatureAction{creature.Create(
 			r.Form["creatureType"][0],
 			r.Form["creatureName"][0],
 			roll)}, nil
@@ -103,9 +104,9 @@ func (s *EncounterServer) HandlePost(r *http.Request, party *Party) (ReversibleP
 		if err != nil {
 			return nil, fmt.Errorf("couldn't parse damage amount - %v", err)
 		}
-		return &DamageCreatureAction{creatureID, damageAmount}, nil
+		return &party.DamageCreatureAction{creatureID, damageAmount}, nil
 	} else if action == "delete" {
-		return NewDeleteCreatureAction(party, creatureID), nil
+		return party.NewDeleteCreatureAction(p, creatureID), nil
 	}
 	return nil, fmt.Errorf("unrecognised action - %v", action)
 }

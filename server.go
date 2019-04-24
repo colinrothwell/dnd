@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dnd/party"
 	"fmt"
 	"html/template"
 	"log"
@@ -58,11 +59,11 @@ func (h *standardTemplatedGetHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 // to render its get request
 type TemplatedPartyGetHandler interface {
 	GetTemplate() *template.Template
-	GenerateTemplateData(*http.Request, *Party) interface{}
+	GenerateTemplateData(*http.Request, *party.Party) interface{}
 }
 
 type standardTemplatedPartyGetHandler struct {
-	party *Party
+	party *party.Party
 	TemplatedPartyGetHandler
 }
 
@@ -109,11 +110,11 @@ func (h *standardRedirectPostHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 }
 
 type PartyActionPostHandler interface {
-	HandlePost(*http.Request, *Party) (ReversiblePartyAction, error)
+	HandlePost(*http.Request, *party.Party) (party.ReversibleAction, error)
 }
 
 type partyActionRedirectPostHandler struct {
-	party                  *Party
+	party                  *party.Party
 	partyActionPostHandler PartyActionPostHandler
 }
 
@@ -122,8 +123,7 @@ func (h *partyActionRedirectPostHandler) HandlePost(r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	h.party.actions.Push(action)
-	action.apply(h.party)
+	h.party.Apply(action)
 	return nil
 }
 
@@ -146,7 +146,7 @@ type TemplatedGetPartyActionHandler interface {
 	PartyActionPostHandler
 }
 
-func standardPartyActionHandler(h TemplatedGetPartyActionHandler, p *Party) http.Handler {
+func standardPartyActionHandler(h TemplatedGetPartyActionHandler, p *party.Party) http.Handler {
 	return &getPostHandler{
 		&standardTemplatedGetHandler{&standardTemplatedPartyGetHandler{p, h}},
 		&standardRedirectPostHandler{&partyActionRedirectPostHandler{p, h}}}

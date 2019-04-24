@@ -5,6 +5,7 @@ import (
 	"dnd/dice"
 	"dnd/undobuffer"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -67,4 +68,18 @@ func Load(file *os.File) (*Party, error) {
 func (p *Party) Apply(action Action) {
 	p.actions.Push(action)
 	action.apply(p)
+}
+
+// Undo the last action in the buffer
+func (p *Party) Undo() error {
+	raw, err := p.actions.Pop()
+	if err != nil {
+		return err
+	}
+	action, ok := raw.(ReversibleAction)
+	if !ok {
+		return fmt.Errorf("undobuffer contains '%v', not a Reversible Action", raw)
+	}
+	action.undo(p)
+	return nil
 }

@@ -57,8 +57,10 @@ func (a *DeleteCreatureAction) apply(p *Party) {
 }
 
 func (a *DeleteCreatureAction) undo(p *Party) {
-	firstPart := p.EncounterCreatures[:a.ID-1]
-	secondPart := p.EncounterCreatures[a.ID:]
-	p.EncounterCreatures = append(firstPart, a.DeletedCreature)
-	p.EncounterCreatures = append(p.EncounterCreatures, secondPart...)
+	// Operates by adding a new gap at the end, copying everything from the insertion position
+	// one along to make room, then putting the deleted creature back in the same place.
+	// I googled how to do this! Unit tests stopped me making a stupid mistake...
+	p.EncounterCreatures = append(p.EncounterCreatures, nil)
+	copy(p.EncounterCreatures[a.ID+1:], p.EncounterCreatures[a.ID:])
+	p.EncounterCreatures[a.ID] = a.DeletedCreature
 }

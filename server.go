@@ -123,7 +123,13 @@ func (h *partyActionRedirectPostHandler) HandlePost(r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	h.party.Apply(action)
+	if action != nil {
+		err = h.party.Apply(action)
+		if err != nil {
+			return err
+		}
+	}
+	h.party.Save()
 	return nil
 }
 
@@ -203,10 +209,8 @@ func main() {
 				logicServer.Handle("/encounter/",
 					standardPartyActionHandler(encounterServer, initialisationServer.Party))
 				logicServer.Handle("/roll/", standardTemplatedGetRedirectPostHandler(&diceServer))
-				logicServer.Handle("/", &getPostHandler{
-					&standardTemplatedGetHandler{&standardTemplatedPartyGetHandler{
-						initialisationServer.Party, overviewServer}},
-					&standardRedirectPostHandler{overviewServer}})
+				logicServer.Handle("/",
+					standardPartyActionHandler(overviewServer, initialisationServer.Party))
 			}
 		}
 	})

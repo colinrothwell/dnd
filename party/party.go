@@ -5,6 +5,7 @@ import (
 	"dnd/dice"
 	"dnd/undobuffer"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -45,8 +46,11 @@ func (p *party) Save() error {
 type Party interface {
 	Name() string
 	Save() error
-	Apply(action Action)
+	Apply(action Action) error
 	Undo() error
+	CanUndo() bool
+	Redo() error
+	CanRedo() bool
 
 	RollInformation
 	EncounterInformation
@@ -101,10 +105,14 @@ func (p *party) Name() string {
 	return nameGuess
 }
 
-// Apply an action to the party, adding it to the undo buffer
-func (p *party) Apply(action Action) {
+// Apply an action to the party, adding it to the undo buffer. Returns an error if action is nil
+func (p *party) Apply(action Action) error {
+	if action == nil {
+		return errors.New("can't apply a nil action")
+	}
 	p.actions.Push(action)
 	action.apply(p)
+	return nil
 }
 
 // Undo the last action in the buffer
@@ -119,6 +127,27 @@ func (p *party) Undo() error {
 	}
 	action.undo(p)
 	return nil
+}
+
+func (p *party) CanUndo() bool {
+	return p.actions.CanPop()
+}
+
+func (p *party) Redo() error {
+	raw, err := p.actions.Unpop()
+	if err != nil {
+		return fmt.Errorf("error redoing: %v", err)
+	}
+	action, ok := raw.(ReversibleAction)
+	if !ok {
+		return fmt.Errorf("undobuffer contains '%v', not a Reversible Action", raw)
+	}
+	action.apply(p)
+	return nil
+}
+
+func (p *party) CanRedo() bool {
+	return p.actions.CanUnpop()
 }
 
 // CustomRoll is the last thing the user typed in the custom roll box

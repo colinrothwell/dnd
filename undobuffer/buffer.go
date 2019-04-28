@@ -59,6 +59,11 @@ func (b *Buffer) Pop() (interface{}, error) {
 	return nil, fmt.Errorf("buffer has no elements")
 }
 
+// CanPop if a call to pop is guaranteed not to return an error
+func (b *Buffer) CanPop() bool {
+	return !b.isEmpty()
+}
+
 // Unpop undoes the effect of removing the last element if that element was popper, and hasn't been
 // overwritten
 func (b *Buffer) Unpop() (interface{}, error) {
@@ -71,6 +76,11 @@ func (b *Buffer) Unpop() (interface{}, error) {
 		return b.data[indexOfElement], nil
 	}
 	return nil, fmt.Errorf("no valid elements remaining on buffer")
+}
+
+// CanUnpop is a call to Unpop is guaranteed not to return an error
+func (b *Buffer) CanUnpop() bool {
+	return b.canUnpop
 }
 
 /* The difficult case is when lowestValidElement is above nextSpace

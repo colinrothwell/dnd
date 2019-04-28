@@ -1,8 +1,15 @@
-{{define "HeadContent" }}
-{{ template "RollHeadContent" .DiceData }}
-{{end}}
-
 {{define "BodyContent"}}
+<div id="toolbar">
+<form method="post" action="/undo">
+    {{redirectURIInput}}
+    <input type="submit" value="Undo" {{.UndoDisabled}} />
+</form>
+<form method="post" action="/redo">
+    {{redirectURIInput}}
+    <input type="submit" value="Redo" {{.RedoDisabled}} />
+</form>
+</div>
+
 <div id="encounter">
 {{template "EncounterBodyContent" .EncounterData}}
 </div>

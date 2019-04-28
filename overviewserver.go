@@ -50,16 +50,43 @@ func (os *OverviewServer) GetTemplate() *template.Template {
 type OverviewTemplateData struct {
 	EncounterData interface{}
 	DiceData      interface{}
+	UndoDisabled  string
+	RedoDisabled  string
 }
 
 func (os *OverviewServer) GenerateTemplateData(r *http.Request, p party.Party) interface{} {
+	var undoDisabled, redoDisabled string
+	if !p.CanUndo() {
+		undoDisabled = "disabled"
+	}
+	if !p.CanRedo() {
+		redoDisabled = "disabled"
+	}
 	data := OverviewTemplateData{
 		os.encounterServer.GenerateTemplateData(r, p),
 		os.diceServer.GenerateTemplateData(r),
+		undoDisabled,
+		redoDisabled,
 	}
 	return data
 }
 
-func (os *OverviewServer) HandlePost(r *http.Request) error {
-	return fmt.Errorf("Error! OverviewServer should never get post requests")
+// HandlePost handles undoing and redoing. Always returns action nil because it is a bit special
+// and operates outside the usual action flow.
+func (os *OverviewServer) HandlePost(r *http.Request, p party.Party) (party.ReversibleAction, error) {
+	switch r.URL.Path {
+	case "/undo":
+		err := p.Undo()
+		if err != nil {
+			return nil, fmt.Errorf("error attempting undo: %v", err)
+		}
+	case "/redo":
+		err := p.Redo()
+		if err != nil {
+			return nil, fmt.Errorf("error attempting redo: %v", err)
+		}
+	default:
+		return nil, fmt.Errorf("unrecognised endpoint: '%v'", r.URL.Path)
+	}
+	return nil, nil
 }

@@ -23,7 +23,7 @@ type initialisationServer struct {
 	template               *template.Template
 	parties                []party.Party
 	InitialisationComplete bool
-	Party                  *party.Party
+	Party                  party.Party
 }
 
 func getDataDir() string {
@@ -62,7 +62,7 @@ func newInitialisationServer(dataDir string, t *template.Template) (*initialisat
 				log.Printf("Error loading party '%s' - %v", fileName, err)
 				continue
 			}
-			s.parties = append(s.parties, *p)
+			s.parties = append(s.parties, p)
 			i++
 		}
 	}
@@ -77,7 +77,7 @@ func (s *initialisationServer) GenerateTemplateData(r *http.Request) interface{}
 	partyInitialisationData := make([]PartyInitialisationData, len(s.parties))
 	for i, p := range s.parties {
 		partyInitialisationData[i] = PartyInitialisationData{
-			p.Name,
+			p.Name(),
 			fmt.Sprintf("/%d", i)}
 	}
 	return partyInitialisationData
@@ -89,7 +89,7 @@ func (s *initialisationServer) initialiseWithNewParty(name string) error {
 	if err != nil {
 		log.Printf("Error encoding party - %v", err)
 	}
-	log.Printf("Created new party '%s' in file '%s'", name, s.Party.Filename)
+	log.Printf("Created new party '%s'", name)
 	return nil
 }
 
@@ -111,7 +111,7 @@ func (s *initialisationServer) HandlePost(r *http.Request) error {
 		if i < 0 || i >= len(s.parties) {
 			return fmt.Errorf("party index %d out of range", i)
 		}
-		s.Party = &s.parties[i]
+		s.Party = s.parties[i]
 	}
 	s.InitialisationComplete = true
 	return nil

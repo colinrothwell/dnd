@@ -15,13 +15,9 @@
     <input id="roll" type="text" name="roll" value="{{ .LastCustomRoll }}">
     <input id="submit-custom" type="submit" name="roll-custom" value="Roll!">
 </form>
-{{if .HasResult }}
-    <h4>{{ .LastRoll.Roll }} = {{ .LastRoll.StringIndividualRolls }} =</h4>
-    <h1>{{ .LastRoll.Sum }}</h1>
-{{end}}
 <ul class="previous-rolls">
-{{range .OlderRolls}}
-    <li>{{ .Roll }} = {{ .StringIndividualRolls }} = {{ .Sum }}</li>
+{{range .Rolls}}
+    <li><span class="roll">{{ .Roll }} = {{ .StringIndividualRolls }} =</span>{{ .Sum }}</li>
 {{end}}
 </ul>
 {{end}}

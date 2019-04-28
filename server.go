@@ -59,11 +59,11 @@ func (h *standardTemplatedGetHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 // to render its get request
 type TemplatedPartyGetHandler interface {
 	GetTemplate() *template.Template
-	GenerateTemplateData(*http.Request, *party.Party) interface{}
+	GenerateTemplateData(*http.Request, party.Party) interface{}
 }
 
 type standardTemplatedPartyGetHandler struct {
-	party *party.Party
+	party party.Party
 	TemplatedPartyGetHandler
 }
 
@@ -110,11 +110,11 @@ func (h *standardRedirectPostHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 }
 
 type PartyActionPostHandler interface {
-	HandlePost(*http.Request, *party.Party) (party.ReversibleAction, error)
+	HandlePost(*http.Request, party.Party) (party.ReversibleAction, error)
 }
 
 type partyActionRedirectPostHandler struct {
-	party                  *party.Party
+	party                  party.Party
 	partyActionPostHandler PartyActionPostHandler
 }
 
@@ -146,7 +146,7 @@ type TemplatedGetPartyActionHandler interface {
 	PartyActionPostHandler
 }
 
-func standardPartyActionHandler(h TemplatedGetPartyActionHandler, p *party.Party) http.Handler {
+func standardPartyActionHandler(h TemplatedGetPartyActionHandler, p party.Party) http.Handler {
 	return &getPostHandler{
 		&standardTemplatedGetHandler{&standardTemplatedPartyGetHandler{p, h}},
 		&standardRedirectPostHandler{&partyActionRedirectPostHandler{p, h}}}

@@ -1,52 +1,10 @@
 package main
 
 import (
-	"dnd/party"
-	"encoding/gob"
 	"io/ioutil"
 	"os"
 	"testing"
 )
-
-func TestGob(t *testing.T) {
-	f, err := ioutil.TempFile("", "test")
-	if err != nil {
-		t.Fatalf("Couldn't create temp file - %v", err)
-	}
-	fn := f.Name()
-	defer os.Remove(fn)
-
-	f, err = os.Create(fn)
-	e := gob.NewEncoder(f)
-	var encodeParty party.Party
-	encodeParty.Filename = "colin"
-	encodeParty.Name = "is"
-	err = e.Encode(encodeParty)
-	if err != nil {
-		t.Fatalf("Error encoding party - %v", err)
-	}
-	f.Close()
-
-	fi, err := os.Stat(fn)
-	t.Logf("File size: %v", fi.Size())
-
-	f, err = os.Open(fn)
-	if err != nil {
-		t.Fatalf("Error opening file for reading - %v", err)
-	}
-	d := gob.NewDecoder(f)
-	var p party.Party
-	p.Filename = "bugger"
-	err = d.Decode(&p)
-	if err != nil {
-		t.Fatalf("Error decoding party - %v", err)
-	}
-	f.Close()
-
-	if p.Filename != "colin" {
-		t.Errorf("Saved party was instead '%v'", p.Filename)
-	}
-}
 
 func TestPartyLoadSaving(t *testing.T) {
 	d, err := ioutil.TempDir("", "encounters")
@@ -62,7 +20,7 @@ func TestPartyLoadSaving(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(is.parties) != 1 || is.parties[0].Name != "foo" {
+	if len(is.parties) != 1 || is.parties[0].Name() != "foo" {
 		t.Error("Error with stored party")
 	}
 	defer func() {

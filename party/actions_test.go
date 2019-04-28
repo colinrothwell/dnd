@@ -33,7 +33,7 @@ func TestDeleteCreatureAction(t *testing.T) {
 	p := testingParty()
 	c := creature.Create("baz", "bar", testDiceRoll(1337))
 	p.Apply(&AddCreatureAction{c})
-	a := NewDeleteCreatureAction(p, 0)
+	a := newDeleteCreatureAction(p, 0)
 	a.apply(p)
 	assert.Equal(t, []*creature.Creature{}, p.EncounterCreatures)
 	a.undo(p)
@@ -47,7 +47,7 @@ func TestDeleteOneOfMultipleCreatures(t *testing.T) {
 		cs[i] = creature.Create("test", "cret", testDiceRoll(i))
 		p.Apply(&AddCreatureAction{cs[i]})
 	}
-	a := NewDeleteCreatureAction(p, 2)
+	a := newDeleteCreatureAction(p, 2)
 	a.apply(p)
 	assert.Equal(t, []*creature.Creature{cs[0], cs[1], cs[3]}, p.EncounterCreatures)
 	a.undo(p)

@@ -203,6 +203,15 @@ div#roll {
     margin: 0 auto;
     padding: 0 1rem 1rem 1rem;
     list-style-type: none;
+
+    li:first-child {
+      font-weight: bold;
+      font-size: 1.5rem;
+      span.roll {
+        font-size: 1.2rem;
+        display: block;
+      }
+    }
   }
 
   input#submit-custom {

@@ -10,14 +10,13 @@ import (
 
 type DiceServer struct {
 	Template *template.Template
-	Party    *party.Party
+	Party    party.Party
 }
 
 type RollTemplateValues struct {
 	HasResult      bool
-	LastRoll       *dice.RollResult
-	OlderRolls     chan *dice.RollResult
-	LastCustomRoll *string
+	Rolls          []*dice.RollResult
+	LastCustomRoll string
 }
 
 func (diceServer *DiceServer) GetTemplate() *template.Template {
@@ -26,14 +25,8 @@ func (diceServer *DiceServer) GetTemplate() *template.Template {
 
 func (diceServer *DiceServer) GenerateTemplateData(r *http.Request) interface{} {
 	var templateValues RollTemplateValues
-	templateValues.LastCustomRoll = &diceServer.Party.LastCustomRoll
-	if len(diceServer.Party.PreviousRolls) > 0 {
-		templateValues.HasResult = true
-		penultimateIndex := len(diceServer.Party.PreviousRolls) - 1
-		templateValues.LastRoll = &diceServer.Party.PreviousRolls[penultimateIndex]
-		templateValues.OlderRolls = dice.ReverseRollResultSlice(
-			diceServer.Party.PreviousRolls[:penultimateIndex])
-	}
+	templateValues.LastCustomRoll = diceServer.Party.CustomRoll()
+	templateValues.Rolls = diceServer.Party.Rolls()
 	return templateValues
 }
 
@@ -44,9 +37,9 @@ func (diceServer *DiceServer) HandlePost(r *http.Request) error {
 		return fmt.Errorf("error parsing roll string")
 	}
 	if len(r.Form["roll-custom"]) > 0 {
-		diceServer.Party.LastCustomRoll = r.Form["roll"][0]
+		diceServer.Party.SetCustomRoll(r.Form["roll"][0])
 	}
-	diceServer.Party.PreviousRolls = append(diceServer.Party.PreviousRolls, roll.Simulate())
+	diceServer.Party.AddRoll(roll.Simulate())
 	err = diceServer.Party.Save()
 	if err != nil {
 		return fmt.Errorf("error saving party - %v", err)

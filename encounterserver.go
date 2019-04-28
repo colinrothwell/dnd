@@ -40,10 +40,10 @@ func (s *EncounterServer) GetTemplate() *template.Template {
 	return s.template
 }
 
-func (s *EncounterServer) GenerateTemplateData(r *http.Request, p *party.Party) interface{} {
-	creatureCount := len(p.EncounterCreatures)
+func (s *EncounterServer) GenerateTemplateData(r *http.Request, p party.Party) interface{} {
+	creatureCount := len(p.Creatures())
 	creatureInformations := make([]CreatureInformation, creatureCount)
-	for i, creature := range p.EncounterCreatures {
+	for i, creature := range p.Creatures() {
 		var hc string
 		if 2*creature.DamageTaken >= creature.RolledHealth {
 			hc = "damaged"
@@ -64,7 +64,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request, p *party.Party) 
 	}
 	data := EncounterData{creatureInformations, "", ""}
 	if creatureCount > 0 {
-		nextCreatureType := p.EncounterCreatures[creatureCount-1].Type
+		nextCreatureType := p.Creatures()[creatureCount-1].Type
 		data.NextCreatureTypeName = nextCreatureType.Name
 		data.NextCreatureHitDice = nextCreatureType.HitDice.String()
 	}
@@ -76,7 +76,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request, p *party.Party) 
 // /encounter/new-creature
 // /encounter/damage/(creatureID)
 // /encounter/delete/(creatureID)
-func (s *EncounterServer) HandlePost(r *http.Request, p *party.Party) (party.ReversibleAction, error) {
+func (s *EncounterServer) HandlePost(r *http.Request, p party.Party) (party.ReversibleAction, error) {
 	args := s.postURLRegexp.FindStringSubmatch(r.URL.Path)
 	if args == nil {
 		return nil, fmt.Errorf("couldn't extract arguments from URL Path '%v'", r.URL.Path)
@@ -106,7 +106,7 @@ func (s *EncounterServer) HandlePost(r *http.Request, p *party.Party) (party.Rev
 		}
 		return &party.DamageCreatureAction{creatureID, damageAmount}, nil
 	} else if action == "delete" {
-		return party.NewDeleteCreatureAction(p, creatureID), nil
+		return p.DeleteCreatureAction(creatureID), nil
 	}
 	return nil, fmt.Errorf("unrecognised action - %v", action)
 }

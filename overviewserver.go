@@ -9,9 +9,10 @@ import (
 )
 
 type OverviewServer struct {
-	template        *template.Template
-	encounterServer *EncounterServer
-	diceServer      *DiceServer
+	template         *template.Template
+	encounterServer  *EncounterServer
+	diceServer       *DiceServer
+	initiativeServer *InitiativeServer
 }
 
 // This is a bit complicated. I've implemented this slightly crazy template inheritance system.
@@ -27,7 +28,12 @@ func attachPrefixedTemplate(root, child *template.Template, prefix string) (*tem
 	return t.Lookup(rootName), nil
 }
 
-func NewOverviewServer(t *template.Template, es *EncounterServer, ds *DiceServer) *OverviewServer {
+// NewOverviewServer creeates a new overview server attaching the templates that won't change
+// directly. We regenerate in GetTemplate() because InitiativeServer changes its template
+// based on if it is running or being edited
+func NewOverviewServer(t *template.Template, es *EncounterServer,
+	ds *DiceServer, is *InitiativeServer) *OverviewServer {
+
 	t, err := attachPrefixedTemplate(t, es.GetTemplate().Lookup("BodyContent"), "Encounter")
 	if err != nil {
 		log.Fatalf("Catastrophic error attaching encounter body content - %v", err)
@@ -40,18 +46,24 @@ func NewOverviewServer(t *template.Template, es *EncounterServer, ds *DiceServer
 	if err != nil {
 		log.Fatalf("Catastrophic error attaching roll head content - %v", err)
 	}
-	return &OverviewServer{t, es, ds}
+	return &OverviewServer{t, es, ds, is}
 }
 
 func (os *OverviewServer) GetTemplate() *template.Template {
-	return os.template
+	t, err := attachPrefixedTemplate(os.template,
+		os.initiativeServer.GetTemplate().Lookup("BodyContent"), "Initiative")
+	if err != nil {
+		log.Fatalf("Catastrophic error attaching initiative head content: %v", err)
+	}
+	return t
 }
 
 type OverviewTemplateData struct {
-	EncounterData interface{}
-	DiceData      interface{}
-	UndoDisabled  string
-	RedoDisabled  string
+	InitiativeData interface{}
+	EncounterData  interface{}
+	DiceData       interface{}
+	UndoDisabled   string
+	RedoDisabled   string
 }
 
 func (os *OverviewServer) GenerateTemplateData(r *http.Request, p party.Party) interface{} {
@@ -63,6 +75,7 @@ func (os *OverviewServer) GenerateTemplateData(r *http.Request, p party.Party) i
 		redoDisabled = "disabled"
 	}
 	data := OverviewTemplateData{
+		os.initiativeServer.GenerateTemplateData(r, p),
 		os.encounterServer.GenerateTemplateData(r, p),
 		os.diceServer.GenerateTemplateData(r),
 		undoDisabled,

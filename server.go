@@ -189,6 +189,7 @@ func main() {
 	diceTemplate := loadTemplate("roll.html")
 	encounterTemplate := loadTemplate("encounter.html")
 	overviewTemplate := loadTemplate("overview.html")
+	initiativeEntryTemplate := loadTemplate("initiative-entry.html")
 
 	logicServer := http.NewServeMux()
 	server := http.NewServeMux()
@@ -200,12 +201,16 @@ func main() {
 		} else {
 			initialisationHandler.ServeHTTP(w, r)
 			if initialisationServer.InitialisationComplete {
+				initiativeServer := InitiativeServer{initiativeEntryTemplate}
 				diceServer := DiceServer{diceTemplate, initialisationServer.Party}
 				encounterServer, err := NewEncounterServer(encounterTemplate)
 				if err != nil {
 					log.Fatalf("Couldn't create encounter server - %v", err)
 				}
-				overviewServer := NewOverviewServer(overviewTemplate, encounterServer, &diceServer)
+				overviewServer := NewOverviewServer(overviewTemplate, encounterServer, &diceServer,
+					&initiativeServer)
+				logicServer.Handle("/initiative/",
+					standardPartyActionHandler(&initiativeServer, initialisationServer.Party))
 				logicServer.Handle("/encounter/",
 					standardPartyActionHandler(encounterServer, initialisationServer.Party))
 				logicServer.Handle("/roll/", standardTemplatedGetRedirectPostHandler(&diceServer))

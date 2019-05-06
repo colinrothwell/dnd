@@ -64,3 +64,16 @@ func (a *DeleteCreatureAction) undo(p *party) {
 	copy(p.EncounterCreatures[a.id+1:], p.EncounterCreatures[a.id:])
 	p.EncounterCreatures[a.id] = a.deletedCreature
 }
+
+// AddPlayerAction adds a new player to party
+type AddPlayerAction struct {
+	Name string
+}
+
+func (a *AddPlayerAction) apply(p *party) {
+	p.Players = append(p.Players, &Player{a.Name})
+}
+
+func (a *AddPlayerAction) undo(p *party) {
+	p.Players = p.Players[:len(p.Players)-1]
+}

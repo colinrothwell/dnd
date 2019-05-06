@@ -12,11 +12,20 @@ import (
 	"path/filepath"
 )
 
+// Encounter creature represents the information about a creature for the purpose of one
+// specific encounter
+type EncounterCreature struct {
+	Name           string
+	InitiativeDice dice.Roll
+	Initiative     int
+}
+
 // party is a structure suitable for storing as a gob that fulfils the requirements of the
 // interface. It is private so that I can use public methods and get auto-gob persistence (lazy!)
 type party struct {
 	Filename, PartyName string
 	actions             *undobuffer.Buffer
+	Players             []*Player
 
 	// For dice server
 	PreviousRolls  []dice.RollResult
@@ -24,6 +33,11 @@ type party struct {
 
 	// For encounter server
 	EncounterCreatures []*creature.Creature
+
+	// For initiative server
+	PlayerHasInitiatives      []bool
+	PlayerInitiativeRolls     []int
+	CurrentEncounterCreatures []*EncounterCreature
 }
 
 // Save the party to its Filename'd .gob file
@@ -54,6 +68,7 @@ type Party interface {
 
 	RollInformation
 	EncounterInformation
+	InitiativeInformation
 }
 
 // RollInformation represents information about the rolls in a game of D&D
@@ -70,15 +85,31 @@ type EncounterInformation interface {
 	DeleteCreatureAction(ID int) *DeleteCreatureAction
 }
 
+// InitiativeInformation is the information about a creature's initiative
+type CreatureInitiative struct {
+	Name          string
+	HasInitiative bool
+	Initiative    int
+}
+
+// InitiativeInformation represents information about the initiative in the current combat
+type InitiativeInformation interface {
+	PlayerInitiatives() []*CreatureInitiative
+}
+
 // New creates a new party to be saved in the given directory
 func New(directory string, name string) Party {
 	return &party{
 		filepath.Join(directory, name+".party.gob"),
 		name,
 		undobuffer.NewBuffer(64),
+		make([]*Player, 0),
 		make([]dice.RollResult, 0),
 		"",
-		make([]*creature.Creature, 0)}
+		make([]*creature.Creature, 0),
+		make([]bool, 0),
+		make([]int, 0),
+		make([]*EncounterCreature, 0)}
 }
 
 // Load party from a gob file
@@ -182,4 +213,16 @@ func (p *party) Creatures() []*creature.Creature {
 // DeleteCreatureAction creatures a delete creature action for a creature
 func (p *party) DeleteCreatureAction(ID int) *DeleteCreatureAction {
 	return newDeleteCreatureAction(p, ID)
+}
+
+// PlayerInitiatives gets the information about the players initiatives
+func (p *party) PlayerInitiatives() []*CreatureInitiative {
+	r := make([]*CreatureInitiative, len(p.Players))
+	for i, player := range p.Players {
+		r[i] = &CreatureInitiative{
+			player.Name,
+			p.PlayerHasInitiatives[i],
+			p.PlayerInitiativeRolls[i]}
+	}
+	return r
 }

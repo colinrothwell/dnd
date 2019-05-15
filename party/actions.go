@@ -40,6 +40,21 @@ func (a *DamageCreatureAction) undo(p *party) {
 	p.EncounterCreatures[a.ID].DamageTaken -= a.Amount
 }
 
+// DamageMultipleCreaturesAction is just a slice of damage creature actions
+type DamageMultipleCreaturesAction []DamageCreatureAction
+
+func (as DamageMultipleCreaturesAction) apply(p *party) {
+	for _, a := range as {
+		a.apply(p)
+	}
+}
+
+func (as DamageMultipleCreaturesAction) undo(p *party) {
+	for _, a := range as {
+		a.undo(p)
+	}
+}
+
 // DeleteCreatureAction deletes a creature
 type DeleteCreatureAction struct {
 	id              int

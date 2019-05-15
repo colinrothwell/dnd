@@ -4,17 +4,19 @@ import (
 	"dnd/creature"
 	"dnd/dice"
 	"dnd/party"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type CreatureInformation struct {
-	Type, Name, DamageURL, DeleteURL string
-	CurrentHealth, MaxHealth         int
-	CurrentHealthClass               string
+	Type, Name, DamageName, DeleteURL string
+	CurrentHealth, MaxHealth          int
+	CurrentHealthClass                string
 }
 
 type EncounterData struct {
@@ -56,7 +58,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request, p party.Party) i
 		creatureInformations[creatureInformationIndex] = CreatureInformation{
 			creature.Type.Name,
 			creature.Name,
-			"/encounter/damage/" + strI,
+			"damageAmount" + strI,
 			"/encounter/delete/" + strI,
 			creature.RolledHealth - creature.DamageTaken,
 			creature.RolledHealth,
@@ -74,7 +76,7 @@ func (s *EncounterServer) GenerateTemplateData(r *http.Request, p party.Party) i
 // HandlePost takes input in two different ways: the posted form and the url
 // the form of the url path is one of
 // /encounter/new-creature
-// /encounter/damage/(creatureID)
+// /encounter/damage
 // /encounter/delete/(creatureID)
 func (s *EncounterServer) HandlePost(r *http.Request, p party.Party) (party.ReversibleAction, error) {
 	args := s.postURLRegexp.FindStringSubmatch(r.URL.Path)
@@ -92,21 +94,44 @@ func (s *EncounterServer) HandlePost(r *http.Request, p party.Party) (party.Reve
 			r.Form["creatureName"][0],
 			roll)}, nil
 	} // else
+	if action == "damage" {
+		actions := make([]party.DamageCreatureAction, 0)
+		for k, v := range r.Form {
+			if strings.HasPrefix(k, "damageAmount") {
+				creatureID, err := strconv.Atoi(k[len("damageAmount"):])
+				if err != nil {
+					return nil, fmt.Errorf("critical error deriving id: %v", err)
+				}
+				if v[0] == "Amount" {
+					continue
+				}
+				damageAmount, err := strconv.Atoi(v[0])
+				if err != nil {
+					return nil, fmt.Errorf("couldn't parse damage amount: %v", err)
+				}
+				if damageAmount != 0 {
+					actions = append(actions, party.DamageCreatureAction{
+						creatureID, damageAmount})
+				}
+			}
+		}
+		if len(actions) == 0 {
+			return nil, errors.New("no creatures damaged in action")
+		} else if len(actions) == 1 {
+			return &actions[0], nil
+		} else {
+			return party.DamageMultipleCreaturesAction(actions), nil
+		}
+	} // else
 	if len(args) != 3 {
 		return nil, fmt.Errorf("unexpected number of args from regex (%d) - %#v", len(args), args)
-	}
+	} // else
 	creatureID, err := strconv.Atoi(args[2])
 	if err != nil {
 		return nil, fmt.Errorf("error parsing int from %v - %v", args[2], err)
 	}
-	if action == "damage" {
-		damageAmount, err := strconv.Atoi(r.Form["damageAmount"][0])
-		if err != nil {
-			return nil, fmt.Errorf("couldn't parse damage amount - %v", err)
-		}
-		return &party.DamageCreatureAction{creatureID, damageAmount}, nil
-	} else if action == "delete" {
-		return p.DeleteCreatureAction(creatureID), nil
+	if action != "delete" {
+		return nil, fmt.Errorf("unrecognised action - %v", action)
 	}
-	return nil, fmt.Errorf("unrecognised action - %v", action)
+	return p.DeleteCreatureAction(creatureID), nil
 }

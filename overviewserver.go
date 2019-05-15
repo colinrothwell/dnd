@@ -28,9 +28,7 @@ func attachPrefixedTemplate(root, child *template.Template, prefix string) (*tem
 	return t.Lookup(rootName), nil
 }
 
-// NewOverviewServer creeates a new overview server attaching the templates that won't change
-// directly. We regenerate in GetTemplate() because InitiativeServer changes its template
-// based on if it is running or being edited
+// NewOverviewServer creeates a new overview server, attaching the templates.
 func NewOverviewServer(t *template.Template, es *EncounterServer,
 	ds *DiceServer, is *InitiativeServer) *OverviewServer {
 
@@ -46,16 +44,15 @@ func NewOverviewServer(t *template.Template, es *EncounterServer,
 	if err != nil {
 		log.Fatalf("Catastrophic error attaching roll head content - %v", err)
 	}
+	t, err = attachPrefixedTemplate(t, is.GetTemplate().Lookup("BodyContent"), "Initiative")
+	if err != nil {
+		log.Fatalf("Catastrophic error attaching initiative head content: %v", err)
+	}
 	return &OverviewServer{t, es, ds, is}
 }
 
 func (os *OverviewServer) GetTemplate() *template.Template {
-	t, err := attachPrefixedTemplate(os.template,
-		os.initiativeServer.GetTemplate().Lookup("BodyContent"), "Initiative")
-	if err != nil {
-		log.Fatalf("Catastrophic error attaching initiative head content: %v", err)
-	}
-	return t
+	return os.template
 }
 
 type OverviewTemplateData struct {

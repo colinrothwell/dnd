@@ -9,12 +9,12 @@ import (
 )
 
 type InitiativeServer struct {
-	entryTemplate *template.Template
+	template *template.Template
 }
 
-// GetTemplate gets the encounter or view template as appropriate
+// GetTemplate gets the template
 func (s *InitiativeServer) GetTemplate() *template.Template {
-	return s.entryTemplate
+	return s.template
 }
 
 type creatureInitiativeInformation struct {

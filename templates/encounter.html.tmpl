@@ -4,9 +4,9 @@
         <th>Type</th>
         <th>Name</th>
         <th>HP</th>
-        <th />
-        <th />
-        <th />
+        <th>
+        <th>
+        <th>
     </tr>
     <tr>
         <form method="post" action="/encounter/new-creature">
@@ -17,21 +17,19 @@
             <td class="input" colspan="3"><input type="submit" value="Add" /></td>
         </form>
     </tr>
-    {{range .CreatureInformation}}
-    <tr>
-        <td>{{.Type}}</td>
-        <td>{{.Name}}</td>
-        <td class="{{.CurrentHealthClass}}">{{.CurrentHealth}} / {{.MaxHealth}}</td>
-        <form method="post" action="{{.DamageURL}}">
-            {{redirectURIInput}}
-            <td class="damageAmount"><input type="text" name="damageAmount" value="Amount" /></td>
+    <form method="post" action="/encounter/damage">
+        {{redirectURIInput}}
+        {{range .CreatureInformation}}
+        <tr>
+            <td>{{.Type}}</td>
+            <td>{{.Name}}</td>
+            <td class="{{.CurrentHealthClass}}">{{.CurrentHealth}} / {{.MaxHealth}}</td>
+            <td class="damageAmount"><input type="text" name="{{.DamageName}}" value="Amount" /></td>
             <td><input type="submit" value="💥" /></td>
-        </form>
-        <form method="post" action="{{.DeleteURL}}">
-            {{redirectURIInput}}
-            <td><input type="submit" value="🗑️" /></td>
-        </form>
-    </tr>
-    {{end}}
+            <td><input formaction="{{.DeleteURL}}" type="submit" value="🗑️" /></td>
+        </tr>
+        {{end}}
+    </form>
 </table>
+</form>
 {{end}}

@@ -189,7 +189,7 @@ func main() {
 	diceTemplate := loadTemplate("roll.html")
 	encounterTemplate := loadTemplate("encounter.html")
 	overviewTemplate := loadTemplate("overview.html")
-	initiativeEntryTemplate := loadTemplate("initiative-entry.html")
+	initiativeEntryTemplate := loadTemplate("initiative.html")
 
 	logicServer := http.NewServeMux()
 	server := http.NewServeMux()
